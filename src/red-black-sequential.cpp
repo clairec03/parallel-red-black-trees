@@ -58,7 +58,10 @@ std::string subtreeToString(TreeNode root) {
   if (!root) {
     return "Empty";
   }
-  return "Node(" + subtreeToString(root->child[0]) + ", " + std::to_string(root->val) + ", " + subtreeToString(root->child[1]) + ")";
+  if (root->red) 
+    return "RED(" + subtreeToString(root->child[0]) + ", " + std::to_string(root->val) + ", " + subtreeToString(root->child[1]) + ")";
+  else 
+    return "BLACK(" + subtreeToString(root->child[0]) + ", " + std::to_string(root->val) + ", " + subtreeToString(root->child[1]) + ")";
 }
 
 std::string treeToString(Tree T) {
@@ -103,20 +106,20 @@ bool validateAtBlackDepth(TreeNode &root, int *blackDepth, int *lo, int *hi) {
 
   // Root must follow BST invariant
   if (lo && root->val <= *lo || hi && *hi <= root->val) {
-    printf("BST Invariant Failed at %d! ", root->val);
+    printf("BST Invariant Failed at %d! \n", root->val);
     return false;
   }
 
   // Red Nodes Cannot have Red Children
   TreeNode left = root->child[0], right = root->child[1];
   if (root->red && ((left && left->red) || (right && right->red))) {
-    printf("Red Children Invariant Failed at %d! ", root->val);
+    printf("Red Children Invariant Failed at %d! \n", root->val);
     return false;
   }
 
   // Children Must Point back to their Parents
   if ((left && left->parent != root) || (right && right->parent != root)) {
-    printf("Orphaned Children at %d! ", root->val);
+    printf("Orphaned Children at %d! \n", root->val);
     return false;
   }
 
@@ -131,7 +134,7 @@ bool validateAtBlackDepth(TreeNode &root, int *blackDepth, int *lo, int *hi) {
 
   // Black depth must be the same for both children
   if (leftDepth != rightDepth) {
-    printf("Black Depth Invariant Failed at %d! ", root->val);
+    printf("Black Depth Invariant Failed at %d! \n", root->val);
     return false;
   }
   
@@ -239,6 +242,48 @@ bool tree_insert(Tree &tree, int val) {
   return true;
 }
 
+// DELETE HELPER FUNCTIONS (As per Wikipedia)
+
+bool delete_case_6(Tree &tree, TreeNode parent, TreeNode sibling, TreeNode distant_nephew, int dir) {
+  rotateDir(tree, parent, dir);
+  sibling->red = parent->red;
+  parent->red = false;
+  distant_nephew->red = false;
+  return true;
+}
+
+bool delete_case_5(Tree &tree, TreeNode parent, TreeNode sibling, 
+                   TreeNode close_nephew, TreeNode distant_nephew, int dir) {
+  rotateDir(tree, sibling, 1-dir);
+  sibling->red = true;
+  close_nephew->red = false;
+  distant_nephew = sibling;
+  sibling = close_nephew;
+  return delete_case_6(tree, parent, sibling, distant_nephew, dir);
+}
+
+bool delete_case_4(TreeNode &sibling, TreeNode &parent) {
+  sibling->red = true;
+  parent->red = false;
+  return true;
+}
+
+bool delete_case_3(Tree &tree, TreeNode parent, TreeNode sibling, 
+                   TreeNode close_nephew, TreeNode distant_nephew, int dir) {
+  rotateDir(tree, parent, dir);
+  parent->red = true;
+  sibling->red = false;
+  sibling = close_nephew;
+  // now: P red && S black
+  distant_nephew = sibling->child[1-dir];
+  if (distant_nephew && distant_nephew->red)
+    return delete_case_6(tree, parent, sibling, distant_nephew, dir);
+  close_nephew = sibling->child[dir]; // close   nephew
+  if (close_nephew && close_nephew->red)
+    return delete_case_5(tree, parent, sibling, close_nephew, distant_nephew, dir);
+  return delete_case_4(sibling, parent);
+}
+
 bool tree_delete (Tree &tree, int val) {
   // Don't delete from an empty tree
   if (!tree->root) {
@@ -255,9 +300,9 @@ bool tree_delete (Tree &tree, int val) {
       node = iter;
       break;
     } else {
+      // Delete from left child if true, right child if false
       parent = iter;
       iter = iter->child[(val > iter->val)];
-      // Insert into left child if true, right child if false
     }
   }
   // If we never found the node to delete, don't delete it
@@ -265,17 +310,18 @@ bool tree_delete (Tree &tree, int val) {
     return false;
   }
 
-  // While node to delete has two children, move down
-  int val;
-  while (node->child[0] && node->child[1]) {
-    val = node->val;
-    node->val = node->child[1]->val;
-    node->child[1]->val = val;
-
-    node = node->child[1];
+  // Two Node Case
+  if (node->child[0] && node->child[1]) {
+    // Find in-order successor of Node
+    iter = node->child[1];
+    while (iter->child[0]) {
+      iter = iter->child[0];
+    }
+    node->val = iter->val;
+    node = iter;
+    parent = node->parent;
   }
   
-  TreeNode parent = node->parent;
   TreeNode left_child = node->child[0];
   TreeNode right_child = node->child[1];
   TreeNode child = left_child ? left_child : right_child;
@@ -283,8 +329,15 @@ bool tree_delete (Tree &tree, int val) {
   // One Node Case
   if (child) {
     // Replace Node with its extant child
-    parent->child[parent->child[1] == node] = child;
-    child->parent = node->parent;
+    if (parent) {
+      // Node had parent, set parent's child
+      parent->child[parent->child[1] == node] = child;
+      child->parent = node->parent;
+    }
+    else {
+      // Node was root, set root
+      tree->root = child;
+    }
     child->red = false;
     delete node;
     return true;
@@ -305,11 +358,40 @@ bool tree_delete (Tree &tree, int val) {
     return true;
   }
 
-  // Node is childless and black
+  // Node is childless and black (Delete Node and Rebalance)
+  int dir = parent->child[1] == node;
+  parent->child[dir] = nullptr;
+  TreeNode tmp = node;
+  node = nullptr;
+  delete tmp;
+
+  TreeNode sibling, close_nephew, distant_nephew;
   while (node != tree->root) {
-    
+    dir = parent->child[1] == node;
+    sibling = parent->child[1-dir];
+    distant_nephew = sibling->child[1-dir];
+    close_nephew = sibling->child[dir];
+    if (sibling->red) {
+      // Case D3
+      return delete_case_3(tree, parent, sibling, close_nephew, distant_nephew, dir);
+    }
+    else if (distant_nephew && distant_nephew->red) {
+      // Case D6
+      return delete_case_6(tree, parent, sibling, distant_nephew, dir);
+    }
+    else if (close_nephew && close_nephew->red) {
+      // Case D5
+      return delete_case_5(tree, parent, sibling, close_nephew, distant_nephew, dir);
+    }
+    else if (parent->red) {
+      // Case D4
+      return delete_case_4(sibling, parent);
+    }
+    sibling->red = true;
+    node = parent;
+    parent = node->parent;
   }
-  return
+  return true;
 
 }
 
@@ -333,17 +415,15 @@ std::vector<int> generate_rand_input(int length = 1000) {
 
 int run_tests() {
   Tree tree = init_tree();
-  int num_nodes = 500;
+  int num_nodes = 10000;
   std::vector<int> tree_elems = generate_rand_input(num_nodes);
 
   for (int i = 0; i < num_nodes; i++) {
     tree_insert(tree, tree_elems[i]);
     if (!validate(tree)) {
-      printf("FAILED AT i = %d!\n", i);
       return 1;
     }
     if (size(tree) != i+1) {
-      printf("ELEMENT %d NOT ACTUALLY INSERTED!\n", i);
       return 1;
     }
   }
@@ -354,11 +434,22 @@ int run_tests() {
     printf("SIZE MISMATCH!\n");
     return 1;
   }
-  printf("%d\n", vec_repr[0]);
   for (int i = 1; i < num_nodes; i++) {
-    printf("%d\n", vec_repr[i]);
     if (vec_repr[i-1] >= vec_repr[i]) {
       printf("ELEMENT %d NOT IN ORDER!\n", i+1);
+      return 1;
+    }
+  }
+  // printf("%s\n", treeToString(tree).c_str());
+
+  for (int i = 0; i < num_nodes; i++) {
+    tree_delete(tree, tree_elems[i]);
+    if (!validate(tree)) {
+      printf("FAILED AT i = %d!\n", i);
+      return 1;
+    }
+    if (size(tree) != num_nodes-i-1) {
+      printf("ELEMENT %d NOT ACTUALLY DELETED!\n", i);
       return 1;
     }
   }
