@@ -1,18 +1,4 @@
-#include <stdio.h>
-#include <string>
-#include <vector>
-#include <set>
-
-typedef struct RedBlackNode {
-  int val;
-  bool red;
-  struct RedBlackNode* parent;
-  struct RedBlackNode* child[2];
-} *TreeNode;
-
-typedef struct RedBlackTree {
-  TreeNode root;
-} *Tree;
+#include "red-black-sequential.h"
 
 inline TreeNode newTreeNode(int val, bool red, TreeNode parent, 
                             TreeNode left, TreeNode right) {
@@ -46,7 +32,7 @@ TreeNode rotateDir(Tree &tree, TreeNode &root, int dir) {
   return rotatingChild;
 }
 
-Tree init_tree() {
+Tree tree_init() {
   Tree tree = new struct RedBlackTree();
   tree->root = nullptr;
   return tree;
@@ -64,7 +50,7 @@ std::string subtreeToString(TreeNode root) {
     return "BLACK(" + subtreeToString(root->child[0]) + ", " + std::to_string(root->val) + ", " + subtreeToString(root->child[1]) + ")";
 }
 
-std::string treeToString(Tree T) {
+std::string tree_to_string(Tree T) {
   return subtreeToString(T->root);
 }
 
@@ -80,7 +66,7 @@ void inord_tree_to_vec_helper(TreeNode T, std::vector <int> &res) {
   inord_tree_to_vec_helper(T->child[1], res);
 }
 
-std::vector <int> inord_tree_to_vec(Tree &T) {
+std::vector <int> tree_to_vector(Tree &T) {
   TreeNode root = T->root;
   std::vector <int> res;
   if (!root) return res;
@@ -90,7 +76,7 @@ std::vector <int> inord_tree_to_vec(Tree &T) {
   return res;
 }
 
-int size(Tree &tree) {
+int tree_size(Tree &tree) {
   return size_subtree(tree->root);
 }
 
@@ -143,13 +129,13 @@ bool validateAtBlackDepth(TreeNode &root, int *blackDepth, int *lo, int *hi) {
 }
 
 // Return whether Red-Black Tree Rooted at root is valid
-bool validate(Tree &tree) {
+bool tree_validate(Tree &tree) {
   int blackDepth = 0;
   return validateAtBlackDepth(tree->root, &blackDepth, nullptr, nullptr);
 }
 
 // Return whether a node with given value exists in a Red-Black Tree
-bool lookup(Tree &tree, int val) {
+bool tree_lookup(Tree &tree, int val) {
   TreeNode node = tree->root;
   while (node) {
     if (val < node->val) {
@@ -167,6 +153,7 @@ bool lookup(Tree &tree, int val) {
 bool tree_insert(Tree &tree, int val) {
   // Edge Case: Set root of Empty tree
   if (!tree->root) {
+    printf("HERE\n");
     tree->root = newTreeNode(val, true, nullptr, nullptr, nullptr);
     return true;
   }
@@ -243,7 +230,6 @@ bool tree_insert(Tree &tree, int val) {
 }
 
 // DELETE HELPER FUNCTIONS (As per Wikipedia)
-
 bool delete_case_6(Tree &tree, TreeNode parent, TreeNode sibling, TreeNode distant_nephew, int dir) {
   rotateDir(tree, parent, dir);
   sibling->red = parent->red;
@@ -393,71 +379,4 @@ bool tree_delete (Tree &tree, int val) {
   }
   return true;
 
-}
-
-std::vector<int> generate_rand_input(int length = 1000) {
-  std::vector<int> res;
-  std::set<int> seen; 
-  int new_elem;
-  for (int i = 0; i < length; i++) {
-    new_elem = rand();
-    
-    while (seen.find(new_elem) != seen.end()) {
-      new_elem = rand();
-    }
-
-    res.push_back(new_elem);
-    seen.insert(new_elem);
-
-  }
-  return res;
-}
-
-int run_tests() {
-  Tree tree = init_tree();
-  int num_nodes = 10000;
-  std::vector<int> tree_elems = generate_rand_input(num_nodes);
-
-  for (int i = 0; i < num_nodes; i++) {
-    tree_insert(tree, tree_elems[i]);
-    if (!validate(tree)) {
-      return 1;
-    }
-    if (size(tree) != i+1) {
-      return 1;
-    }
-  }
-
-  std::vector<int> vec_repr = inord_tree_to_vec(tree);
-
-  if (vec_repr.size() != tree_elems.size()) {
-    printf("SIZE MISMATCH!\n");
-    return 1;
-  }
-  for (int i = 1; i < num_nodes; i++) {
-    if (vec_repr[i-1] >= vec_repr[i]) {
-      printf("ELEMENT %d NOT IN ORDER!\n", i+1);
-      return 1;
-    }
-  }
-  // printf("%s\n", treeToString(tree).c_str());
-
-  for (int i = 0; i < num_nodes; i++) {
-    tree_delete(tree, tree_elems[i]);
-    if (!validate(tree)) {
-      printf("FAILED AT i = %d!\n", i);
-      return 1;
-    }
-    if (size(tree) != num_nodes-i-1) {
-      printf("ELEMENT %d NOT ACTUALLY DELETED!\n", i);
-      return 1;
-    }
-  }
-
-  printf("SUCCEEDED!\n");
-  return 0;
-}
-
-int main() {
-  return run_tests();
 }
