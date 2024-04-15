@@ -143,8 +143,8 @@ int main(int argc, char *argv[]) {
 
   // Start Red-Black Testing Code Here
   int expected_size = 0;
+  Tree tree = tree_init();
   for (auto& operation : operations) {
-    Tree tree = tree_init();
     switch(operation.type) {
       case INSERT:
         if (tree_insert(tree, operation.val)) {
@@ -160,7 +160,6 @@ int main(int argc, char *argv[]) {
         tree_lookup(tree, operation.val);
         break;
     }
-    std::cout << tree_to_string(tree) << std::endl;
     if (!tree_validate(tree)) {
       std::cout << "Produced invalid Tree at operation " << operation_to_string(operation) << ".\n";
       return 1;

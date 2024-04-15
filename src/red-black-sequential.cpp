@@ -153,7 +153,6 @@ bool tree_lookup(Tree &tree, int val) {
 bool tree_insert(Tree &tree, int val) {
   // Edge Case: Set root of Empty tree
   if (!tree->root) {
-    printf("HERE\n");
     tree->root = newTreeNode(val, true, nullptr, nullptr, nullptr);
     return true;
   }
