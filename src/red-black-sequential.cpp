@@ -1,5 +1,7 @@
 #include "red-black-sequential.h"
 
+using namespace std;
+
 inline TreeNode newTreeNode(int val, bool red, TreeNode parent, 
                             TreeNode left, TreeNode right) {
   TreeNode node = new struct RedBlackNode();
@@ -40,17 +42,17 @@ Tree tree_init() {
 
 
 
-std::string subtreeToString(TreeNode root) {
+string subtreeToString(TreeNode root) {
   if (!root) {
     return "Empty";
   }
   if (root->red) 
-    return "RED(" + subtreeToString(root->child[0]) + ", " + std::to_string(root->val) + ", " + subtreeToString(root->child[1]) + ")";
+    return "RED(" + subtreeToString(root->child[0]) + ", " + to_string(root->val) + ", " + subtreeToString(root->child[1]) + ")";
   else 
-    return "BLACK(" + subtreeToString(root->child[0]) + ", " + std::to_string(root->val) + ", " + subtreeToString(root->child[1]) + ")";
+    return "BLACK(" + subtreeToString(root->child[0]) + ", " + to_string(root->val) + ", " + subtreeToString(root->child[1]) + ")";
 }
 
-std::string tree_to_string(Tree T) {
+string tree_to_string(Tree T) {
   return subtreeToString(T->root);
 }
 
@@ -59,16 +61,16 @@ int size_subtree(TreeNode &root) {
   return 1 + size_subtree(root->child[0]) + size_subtree(root->child[1]);
 }
 
-void inord_tree_to_vec_helper(TreeNode T, std::vector <int> &res) {
+void inord_tree_to_vec_helper(TreeNode T, vector <int> &res) {
   if (!T) return;
   inord_tree_to_vec_helper(T->child[0], res);
   res.push_back(T->val);
   inord_tree_to_vec_helper(T->child[1], res);
 }
 
-std::vector <int> tree_to_vector(Tree &T) {
+vector <int> tree_to_vector(Tree &T) {
   TreeNode root = T->root;
-  std::vector <int> res;
+  vector <int> res;
   if (!root) return res;
   
   inord_tree_to_vec_helper(root, res);

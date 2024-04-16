@@ -2,11 +2,13 @@
 #include <set>
 #include <string>
 
+using namespace std;
+
 typedef struct RedBlackNode {
-  int val;
-  bool red;
   struct RedBlackNode* parent;
   struct RedBlackNode* child[2];
+  int val;
+  bool red;
 } *TreeNode;
 
 typedef struct RedBlackTree {
@@ -22,5 +24,5 @@ bool tree_lookup(Tree &tree, int val);
 // Debug Functions
 int tree_size(Tree &tree);
 bool tree_validate(Tree &tree);
-std::string tree_to_string(Tree tree);
-std::vector <int> tree_to_vector(Tree &tree);
+string tree_to_string(Tree tree);
+vector <int> tree_to_vector(Tree &tree);
