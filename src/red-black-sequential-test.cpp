@@ -98,46 +98,94 @@ int main(int argc, char *argv[]) {
   // Command Line Input Code (adapted from Assn 3)
   std::string input_filename;
   int opt;
-  while ((opt = getopt(argc, argv, "f:n:p:i:m:b:c:e")) != -1) {
+  bool insert_test = false, mixed_test = false;
+  int num_operations;
+  while ((opt = getopt(argc, argv, "f:i:d:m:")) != -1) {
     switch (opt) {
       case 'f':
         input_filename = optarg;
+        break;
+      case 'i':
+        insert_test = true;
+        num_operations = atoi(optarg);
+        break;
+      case 'm':
+        mixed_test = true;
+        num_operations = atoi(optarg);
         break;
       default:
         fprintf(stderr, "Usage: %s -f input_filename \n", argv[0]);
         exit(EXIT_FAILURE);
     }
   }
-  if (empty(input_filename)) {
-    fprintf(stderr, "Usage: %s -f input_filename \n", argv[0]);
+  // Should only specify one of f, i, m
+  if (!empty(input_filename) + insert_test + mixed_test != 1) {
+    fprintf(stderr, "Usage: %s [-f input_filename] \n", argv[0]);
     exit(EXIT_FAILURE);
   }
 
-  // Attempt to open and read file
-  std::cout << "Input file: " << input_filename << '\n';
-  std::ifstream fin(input_filename);
+  std::vector<Operation> operations;
+  if (!empty(input_filename)) {
+    // Attempt to open and read file
+    std::cout << "Input file: " << input_filename << '\n';
+    std::ifstream fin(input_filename);
 
-  if (!fin) {
-    std::cerr << "Unable to open file: " << input_filename << ".\n";
-    exit(EXIT_FAILURE);
-  }
-
-  int num_operations;
-  fin >> num_operations;
-  std::vector<Operation> operations(num_operations);
-  std::string type;
-  int val;
-  for (auto& operation : operations) {
-    fin >> type >> operation.val;
-    if (!type.compare("INSERT")) {
-      operation.type = INSERT;
-    } else if (!type.compare("LOOKUP")) {
-      operation.type = LOOKUP;
-    } else if (!type.compare("DELETE")) {
-      operation.type = DELETE;
-    } else {
-      std::cerr << "Malformed operation \"" << type << "\" in input file: " << input_filename << ".\n";
+    if (!fin) {
+      std::cerr << "Unable to open file: " << input_filename << ".\n";
       exit(EXIT_FAILURE);
+    }
+
+    fin >> num_operations;
+    operations.resize(num_operations);
+    int val;
+    std::string type;
+    for (auto& operation : operations) {
+      fin >> type >> operation.val;
+      if (!type.compare("INSERT")) {
+        operation.type = INSERT;
+      } else if (!type.compare("LOOKUP")) {
+        operation.type = LOOKUP;
+      } else if (!type.compare("DELETE")) {
+        operation.type = DELETE;
+      } else {
+        std::cerr << "Malformed operation \"" << type << "\" in input file: " << input_filename << ".\n";
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
+  else if (insert_test) {
+    operations.resize(num_operations);
+    for (auto& operation : operations) {
+      operation.type = INSERT;
+      operation.val = std::rand();
+    }
+  }
+  else { // mixed_test
+    operations.resize(num_operations);
+    std::vector<int> in_tree;
+    int index;
+    for (auto& operation : operations) {
+      if (in_tree.size() > 0) {
+        operation.type = std::rand() % 3;
+      } else {
+        operation.type = INSERT;
+      }
+      
+      switch (operation.type) {
+        case INSERT:
+          operation.val = std::rand();
+          in_tree.push_back(operation.val);
+          break;
+        case DELETE:
+          index = std::rand() % in_tree.size();
+          operation.val = in_tree[index];
+          in_tree.erase(in_tree.begin() + index);
+          break;
+        case LOOKUP:
+          index = std::rand() % in_tree.size();
+          operation.val = in_tree[index];
+          break;
+      }
     }
   }
 
@@ -145,6 +193,7 @@ int main(int argc, char *argv[]) {
   int expected_size = 0;
   Tree tree = tree_init();
   for (auto& operation : operations) {
+    printf("%d, %d\n", operation.type, operation.val);
     switch(operation.type) {
       case INSERT:
         if (tree_insert(tree, operation.val)) {

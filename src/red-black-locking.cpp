@@ -130,10 +130,6 @@ bool validateAtBlackDepth(TreeNode &root, int *blackDepth, int *lo, int *hi) {
 
 // Return whether Red-Black Tree Rooted at root is valid
 bool tree_validate(Tree &tree) {
-  if (tree->root && tree->root->parent) {
-    printf("Root has a parent!\n");
-    return false;
-  }
   int blackDepth = 0;
   return validateAtBlackDepth(tree->root, &blackDepth, nullptr, nullptr);
 }
@@ -286,6 +282,7 @@ bool tree_delete (Tree &tree, int val) {
 
   while (iter) {
     if (val == iter->val) {
+      node = iter;
       break;
     } else {
       // Delete from left child if true, right child if false
@@ -294,7 +291,6 @@ bool tree_delete (Tree &tree, int val) {
     }
   }
   // If we never found the node to delete, don't delete it
-  node = iter;
   if (!node) {
     return false;
   }
@@ -320,14 +316,12 @@ bool tree_delete (Tree &tree, int val) {
     // Replace Node with its extant child
     if (parent) {
       // Node had parent, set parent's child
-      bool dir = parent->child[1] == node;
-      parent->child[dir] = child;
-      child->parent = parent;
+      parent->child[parent->child[1] == node] = child;
+      child->parent = node->parent;
     }
     else {
       // Node was root, set root
       tree->root = child;
-      child->parent = nullptr;
     }
     child->red = false;
     delete node;
