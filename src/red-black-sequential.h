@@ -1,12 +1,11 @@
 #include <vector>
-#include <set>
 #include <string>
 
 using namespace std;
 
 typedef struct RedBlackNode {
-  struct RedBlackNode* parent;
   struct RedBlackNode* child[2];
+  struct RedBlackNode* parent;
   int val;
   bool red;
 } *TreeNode;

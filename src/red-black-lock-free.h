@@ -1,17 +1,16 @@
 #include <atomic>
 #include <vector>
-#include <set>
 #include <string>
 
 using namespace std;
 
 typedef struct RedBlackNode {
-  struct RedBlackNode* parent;
   struct RedBlackNode* child[2];
+  struct RedBlackNode* parent;
   int val;
   int marker;
+  atomic<bool> flag;
   bool red;
-  atomic<bool> locked;
 } *TreeNode;
 
 typedef struct RedBlackTree {
