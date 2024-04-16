@@ -2,6 +2,8 @@
 #include <vector>
 #include <string>
 
+#include <omp.h>
+
 using namespace std;
 
 typedef struct RedBlackNode {
@@ -23,7 +25,7 @@ bool tree_insert(Tree &tree, int val);
 bool tree_delete(Tree &tree, int val);
 bool tree_lookup(Tree &tree, int val);
 
-// Debug Functions
+// (Sequential) Debug Functions
 int tree_size(Tree &tree);
 bool tree_validate(Tree &tree);
 string tree_to_string(Tree tree);

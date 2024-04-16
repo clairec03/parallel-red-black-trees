@@ -15,7 +15,7 @@ inline TreeNode newTreeNode(int val, bool red, TreeNode parent,
   node->child[1] = right;
   node->parent = parent;
   node->val = val;
-  node->marker = 0;
+  node->marker = -1; // Initialized to -1
   node->flag = false;
   node->red = red;
   return node;
@@ -152,6 +152,7 @@ bool tree_validate(Tree &tree) {
 bool tree_lookup(Tree &tree, int val) {
   TreeNode node = tree->root;
   while (node) {
+    TreeNode old_node = node;
     if (val < node->val) {
       node = node->child[0];
     } else if (val > node->val) {
@@ -159,7 +160,17 @@ bool tree_lookup(Tree &tree, int val) {
     } else {
       return true;
     }
+    bool expected = false;
+    if (!node) {
+      return false;
+    }
+    old_node->flag = false;
+    if (!node->flag.compare_exchange_weak(expected, true)) {
+      // TODO for extension goal - Backoff???
+      return tree_lookup(tree, val);
+    }
   }
+  // should never get here?
   return false;
 }
 
