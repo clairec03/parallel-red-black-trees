@@ -75,6 +75,7 @@ bool setup_local_area_insert(TreeNode &node) {
 
   // Setup Flags
   bool expected = false;
+  // TODO: do nullptr check for the nodes below
   if (node->marker != -1 || !node->flag.compare_exchange_weak(expected, true)) {
     return false;
   }
@@ -136,6 +137,7 @@ bool setup_local_area_delete(TreeNode &node) {
   }
 
   // Setup flags for local area (all 5 nodes)
+  // TODO: do nullptr check for the nodes below
   bool expected = false;
   if (node->marker != -1 || !node->flag.compare_exchange_weak(expected, true)) {
     return false;
@@ -223,7 +225,7 @@ void move_local_area_up(TreeNode &node) {
   }
 
   // Remove the markers for old grandparent and greatgrandparent (new node and parent)
-  // Also add flags for all except new node (who already hade one as old gp)
+  // Also add flags for all except new node (who already had one as old gp)
   bool expected = false;
   p = node->parent;
   gp = p->parent;
