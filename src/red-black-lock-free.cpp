@@ -240,6 +240,10 @@ bool tree_insert(Tree &tree, int val) {
       rotateDir(tree, grandparent, 1-dir);
       parent->red = false;
       grandparent->red = true;
+      // A little bit suspicious about this but idk
+      // Like should local area change when we do rotations?
+      // Since we're not storing as vectors, so flags will no longer be at same areas
+      clear_local_area_insert(node);
       return true;
     }
 
@@ -253,6 +257,7 @@ bool tree_insert(Tree &tree, int val) {
   }
 
   // If We're the Root, Done (I3)
+  clear_local_area_insert(node);
   return true;
 }
 
