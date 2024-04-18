@@ -30,3 +30,10 @@ int tree_size(Tree &tree);
 bool tree_validate(Tree &tree);
 string tree_to_string(Tree tree);
 vector <int> tree_to_vector(Tree &tree);
+
+// Helper Functions for Lock-free Operations
+void clear_local_area_insert(TreeNode node);
+void clear_local_area_delete(TreeNode node);
+void is_local_area_available(TreeNode node);
+bool setup_local_area_insert(TreeNode node);
+bool setup_local_area_delete(TreeNode node);

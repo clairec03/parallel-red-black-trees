@@ -1,4 +1,7 @@
-#include "red-black-lock-free.h"
+#include "utils-lock-free.cpp"
+#include <stdio.h>
+#include <sched.h>
+#include <omp.h>
 
 using namespace std;
 
@@ -6,7 +9,12 @@ using namespace std;
 // 1. `flag` field for each node indicates whether the node is being modified
 //    Setting the flag field protects the local area around the node for insertion
 //    including the node itself, its parent, uncle, and grandparent by checking flags
-// 2. 
+// 2. Intention markers ensure a safe distance between any two processes s.t.
+//    each process is guaranteed to be able to act. An intention marker is an integer field
+//    in each node that is set by a process to indicate that the process intends to 
+//    move its local area up to that node. To set a marker, a thread places its thread ID 
+//    in the marker field of the node (omp_get_thread_num();). After the work in the local area
+//    is done, the thread resets its own markers and flags.
 
 inline TreeNode newTreeNode(int val, bool red, TreeNode parent, 
                             TreeNode left, TreeNode right) {
@@ -148,6 +156,8 @@ bool tree_validate(Tree &tree) {
   return validateAtBlackDepth(tree->root, &blackDepth, nullptr, nullptr);
 }
 
+TreeNode tree_find(Tree &tree, int val)
+
 // Return whether a node with given value exists in a Red-Black Tree
 bool tree_lookup(Tree &tree, int val) {
   TreeNode node = tree->root;
@@ -182,20 +192,8 @@ bool tree_insert(Tree &tree, int val) {
     return true;
   }
 
-  // Search down to find where node would be
-  TreeNode iter = tree->root;
-  TreeNode parent = tree->root->parent;
-
-  while (iter) {
-    parent = iter;
-
-    if (val == iter->val) {
-      return false;
-    } else {
-      iter = iter->child[(val > iter->val)];
-      // Insert into left child if true, right child if false
-    }
-  }
+  // TODO: Search down to find where node would be
+  TreeNode parent;
 
   // Place Node Where it Would be in the Tree Assuming No Rebalancing
   TreeNode node = newTreeNode(val, true, parent, nullptr, nullptr);
@@ -205,6 +203,10 @@ bool tree_insert(Tree &tree, int val) {
     parent->child[1] = node;
   }
 
+  if (!setup_local_area_insert(node)) {
+    return tree_insert(tree, val);
+  }
+  
   // Go Through the Cases of Tree Insertion
   // Source: https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insertion
   TreeNode grandparent;
@@ -213,6 +215,7 @@ bool tree_insert(Tree &tree, int val) {
   while (node->parent) {
     // If Parent is Black, Chilling (I1)
     if (!parent->red) {
+      clear_local_area_insert(node);
       return true;
     }
 
@@ -253,7 +256,7 @@ bool tree_insert(Tree &tree, int val) {
   return true;
 }
 
-// DELETE HELPER FUNCTIONS (As per Wikipedia)
+// HELPER FUNCTIONS FOR DELETE (As per Wikipedia)
 bool delete_case_6(Tree &tree, TreeNode parent, TreeNode sibling, TreeNode distant_nephew, int dir) {
   rotateDir(tree, parent, dir);
   sibling->red = parent->red;
