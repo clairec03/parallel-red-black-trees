@@ -180,7 +180,7 @@ bool tree_lookup(Tree &tree, int val) {
       return tree_lookup(tree, val);
     }
   }
-  // should never get here?
+  // should never reach here
   return false;
 }
 
