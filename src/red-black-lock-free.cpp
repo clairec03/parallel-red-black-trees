@@ -247,12 +247,16 @@ bool tree_insert(Tree &tree, int val) {
       return true;
     }
 
+    // Case parent and uncle are both red nodes
+
     // Parent and Uncle Both Red, Swap Parent + Grandparent Colors (I2)
     parent->red = false;
     uncle->red = false;
     grandparent->red = true;
 
     node = grandparent;
+    // Move local area up to the grandparent
+    move_local_area_up(node); // TODO: Correctness check
     parent = node->parent;
   }
 
@@ -267,6 +271,7 @@ bool delete_case_6(Tree &tree, TreeNode parent, TreeNode sibling, TreeNode dista
   sibling->red = parent->red;
   parent->red = false;
   distant_nephew->red = false;
+  clear_local_area_delete(parent);
   return true;
 }
 
@@ -283,6 +288,7 @@ bool delete_case_5(Tree &tree, TreeNode parent, TreeNode sibling,
 bool delete_case_4(TreeNode &sibling, TreeNode &parent) {
   sibling->red = true;
   parent->red = false;
+  clear_local_area_delete(parent);
   return true;
 }
 
@@ -302,7 +308,7 @@ bool delete_case_3(Tree &tree, TreeNode parent, TreeNode sibling,
   return delete_case_4(sibling, parent);
 }
 
-bool tree_delete (Tree &tree, int val) {
+bool tree_delete(Tree &tree, int val) {
   // Don't delete from an empty tree
   if (!tree->root) {
     return false;
@@ -334,7 +340,7 @@ bool tree_delete (Tree &tree, int val) {
     iter = node->child[1];
     while (iter->child[0]) {
       iter = iter->child[0];
-    }
+    }  
     node->val = iter->val;
     node = iter;
     parent = node->parent;
@@ -346,20 +352,25 @@ bool tree_delete (Tree &tree, int val) {
 
   // One Node Case
   if (child) {
+    if (!setup_local_area_delete(node)) {
+      return tree_delete(tree, val);
+    }
+
     // Replace Node with its extant child
     if (parent) {
       // Node had parent, set parent's child
       bool dir = parent->child[1] == node;
       parent->child[dir] = child;
       child->parent = parent;
-    }
-    else {
+    } else {
       // Node was root, set root
       tree->root = child;
       child->parent = nullptr;
     }
+
     child->red = false;
     delete node;
+    clear_local_area_delete(child);
     return true;
   }
 
@@ -368,6 +379,7 @@ bool tree_delete (Tree &tree, int val) {
   if (node == tree->root) {
     tree->root = nullptr;
     delete node;
+    // No need to clear local area bc tree is empty
     return true;
   }
 
@@ -375,6 +387,7 @@ bool tree_delete (Tree &tree, int val) {
   if (node->red) {
     parent->child[parent->child[1] == node] = nullptr;
     delete node;
+    clear_local_area_delete(parent);
     return true;
   }
 
@@ -410,6 +423,7 @@ bool tree_delete (Tree &tree, int val) {
     sibling->red = true;
     node = parent;
     parent = node->parent;
+    clear_local_area_delete(node);
   }
   return true;
 

@@ -35,6 +35,8 @@ vector<int> tree_to_vector(Tree &tree);
 void clear_local_area_insert(TreeNode &node);
 void clear_local_area_delete(TreeNode &node);
 void is_in_local_area(TreeNode &node);
+void move_local_area_up(TreeNode &node);
+
+// Make sure to check the setup succeeded
 bool setup_local_area_insert(TreeNode &node);
 bool setup_local_area_delete(TreeNode &node);
-void move_local_area_up(TreeNode &node);
