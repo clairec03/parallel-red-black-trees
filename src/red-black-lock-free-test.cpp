@@ -49,6 +49,7 @@ int run_tests() {
     printf("SIZE MISMATCH!\n");
     return 1;
   }
+
   for (int i = 1; i < num_nodes; i++) {
     if (vec_repr[i-1] >= vec_repr[i]) {
       printf("ELEMENT %d NOT IN ORDER!\n", i+1);
@@ -77,14 +78,17 @@ int main(int argc, char *argv[]) {
   string input_filename;
   int opt;
   bool insert_test = false;
-  int num_operations;
+  int num_operations, max_num_elems, num_threads;
   string operation_type;
   vector<Operation_t> operations;
 
-  while ((opt = getopt(argc, argv, "f:")) != -1) {
+  while ((opt = getopt(argc, argv, "f:n:")) != -1) {
     switch (opt) {
       case 'f':
         input_filename = optarg;
+        break;
+      case 'n':
+        num_threads = atoi(optarg);
         break;
       default:
         fprintf(stderr, "Usage: %s -f input_filename \n", argv[0]);
@@ -106,41 +110,52 @@ int main(int argc, char *argv[]) {
     }
 
     fin >> num_operations;
-    fin >> operation_type;
+    fin >> max_num_elems;
+
+    if (max_num_elems <= 0) {
+      cerr << "Invalid max_num_elems: " << max_num_elems << ".\n";
+      exit(EXIT_FAILURE);
+    }
+    
 
     operations.resize(num_operations);
     int val;
     for (auto& operation : operations) {
       fin >> operation.val;
     }
-  } 
-    // mixed_test
-    operations.resize(num_operations);
-    vector<int> in_tree;
-    int index;
-    for (auto& operation : operations) {
-      if (in_tree.size() > 0) {
-        operation.type = rand() % 3;
-      } else {
-        operation.type = INSERT;
-      }
-      
-      switch (operation.type) {
-        case INSERT:
-          operation.val = rand();
-          in_tree.push_back(operation.val);
-          break;
-        case DELETE:
-          index = rand() % in_tree.size();
-          operation.val = in_tree[index];
-          in_tree.erase(in_tree.begin() + index);
-          break;
-        case LOOKUP:
-          index = rand() % in_tree.size();
-          operation.val = in_tree[index];
-          break;
-      }
+  }
+
+  for (int i = 0; i < num_operations; i++) {
+
+  }
+  // TODO: Add *correct* code for random input fuzzing test later
+  // mixed_test
+  operations.resize(num_operations);
+  vector<int> in_tree;
+  int index;
+  for (auto& operation : operations) {
+    if (in_tree.size() > 0) {
+      operation.type = rand() % 3;
+    } else {
+      operation.type = INSERT;
     }
+    
+    switch (operation.type) {
+      case INSERT:
+        operation.val = rand();
+        in_tree.push_back(operation.val);
+        break;
+      case DELETE:
+        index = rand() % in_tree.size();
+        operation.val = in_tree[index];
+        in_tree.erase(in_tree.begin() + index);
+        break;
+      case LOOKUP:
+        index = rand() % in_tree.size();
+        operation.val = in_tree[index];
+        break;
+    }
+  }
 
   // Start Red-Black Testing Code Here
   int expected_size = 0;

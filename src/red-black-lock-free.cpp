@@ -305,7 +305,7 @@ bool delete_case_3(Tree &tree, TreeNode parent, TreeNode sibling,
   distant_nephew = sibling->child[1-dir];
   if (distant_nephew && distant_nephew->red)
     return delete_case_6(tree, parent, sibling, distant_nephew, dir);
-  close_nephew = sibling->child[dir]; // close   nephew
+  close_nephew = sibling->child[dir]; // close nephew
   if (close_nephew && close_nephew->red)
     return delete_case_5(tree, parent, sibling, close_nephew, distant_nephew, dir);
   return delete_case_4(sibling, parent);
