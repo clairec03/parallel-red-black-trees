@@ -4,10 +4,15 @@
 #include <set>
 #include <unistd.h>
 #include "red-black-lock-free.h"
+#include <omp.h>
+#include <vector>
+#include <sstream>
 
-std::vector<int> generate_rand_input(int length = 1000) {
-  std::vector<int> res;
-  std::set<int> seen; 
+using namespace std;
+
+vector<int> generate_rand_input(int length = 1000) {
+  vector<int> res;
+  set<int> seen; 
   int new_elem;
   for (int i = 0; i < length; i++) {
     new_elem = rand();
@@ -26,7 +31,7 @@ std::vector<int> generate_rand_input(int length = 1000) {
 int run_tests() {
   Tree tree = tree_init();
   int num_nodes = 10000;
-  std::vector<int> tree_elems = generate_rand_input(num_nodes);
+  vector<int> tree_elems = generate_rand_input(num_nodes);
 
   for (int i = 0; i < num_nodes; i++) {
     tree_insert(tree, tree_elems[i]);
@@ -38,7 +43,7 @@ int run_tests() {
     }
   }
 
-  std::vector<int> vec_repr = tree_to_vector(tree);
+  vector<int> vec_repr = tree_to_vector(tree);
 
   if (vec_repr.size() != tree_elems.size()) {
     printf("SIZE MISMATCH!\n");
@@ -68,12 +73,14 @@ int run_tests() {
 }
 
 int main(int argc, char *argv[]) {
-  // Command Line Input Code (adapted from Assn 3)
-  std::string input_filename;
+  // Command Line Input Code (adapted from Lab 3)
+  string input_filename;
   int opt;
   bool insert_test = false;
   int num_operations;
-  std::string operation_type;
+  string operation_type;
+  vector<Operation_t> operations;
+
   while ((opt = getopt(argc, argv, "f:")) != -1) {
     switch (opt) {
       case 'f':
@@ -88,63 +95,52 @@ int main(int argc, char *argv[]) {
   if (empty(input_filename)) {
     fprintf(stderr, "Usage: %s -f input_filename \n", argv[0]);
     exit(EXIT_FAILURE);
-  }
-
-  if (!empty(input_filename)) {
+  } else {
     // Attempt to open and read file
-    std::cout << "Input file: " << input_filename << '\n';
-    std::ifstream fin(input_filename);
+    cout << "Input file: " << input_filename << '\n';
+    ifstream fin(input_filename);
 
     if (!fin) {
-      std::cerr << "Unable to open file: " << input_filename << ".\n";
+      cerr << "Unable to open file: " << input_filename << ".\n";
       exit(EXIT_FAILURE);
     }
 
     fin >> num_operations;
     fin >> operation_type;
 
-    std::vector<int> operations;
     operations.resize(num_operations);
     int val;
-    for (int operation : operations) {
+    for (auto& operation : operations) {
       fin >> operation.val;
     }
-  }
-  else if (insert_test) {
+  } 
+    // mixed_test
     operations.resize(num_operations);
-    for (auto& operation : operations) {
-      operation.type = INSERT;
-      operation.val = std::rand();
-    }
-  }
-  else { // mixed_test
-    operations.resize(num_operations);
-    std::vector<int> in_tree;
+    vector<int> in_tree;
     int index;
     for (auto& operation : operations) {
       if (in_tree.size() > 0) {
-        operation.type = std::rand() % 3;
+        operation.type = rand() % 3;
       } else {
         operation.type = INSERT;
       }
       
       switch (operation.type) {
         case INSERT:
-          operation.val = std::rand();
+          operation.val = rand();
           in_tree.push_back(operation.val);
           break;
         case DELETE:
-          index = std::rand() % in_tree.size();
+          index = rand() % in_tree.size();
           operation.val = in_tree[index];
           in_tree.erase(in_tree.begin() + index);
           break;
         case LOOKUP:
-          index = std::rand() % in_tree.size();
+          index = rand() % in_tree.size();
           operation.val = in_tree[index];
           break;
       }
     }
-  }
 
   // Start Red-Black Testing Code Here
   int expected_size = 0;
@@ -167,11 +163,11 @@ int main(int argc, char *argv[]) {
         break;
     }
     if (!tree_validate(tree)) {
-      std::cout << "Produced invalid Tree at operation " << operation_to_string(operation) << ".\n";
+      cout << "Produced invalid Tree at operation " << operation_to_string(operation) << ".\n";
       return 1;
     }
     else if (tree_size(tree) != expected_size) {
-      std::cout << "Produced Tree of wrong size at operation " << operation_to_string(operation) << ".\n";
+      cout << "Produced Tree of wrong size at operation " << operation_to_string(operation) << ".\n";
       return 1;
     }
   }

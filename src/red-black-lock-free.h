@@ -1,10 +1,14 @@
 #include <atomic>
 #include <vector>
 #include <string>
-
 #include <omp.h>
 
 using namespace std;
+
+#define INSERT 0
+#define DELETE 1
+#define LOOKUP 2
+
 
 typedef struct RedBlackNode {
   struct RedBlackNode* child[2];
@@ -40,3 +44,11 @@ void move_local_area_up(TreeNode &node);
 // Make sure to check the setup succeeded
 bool setup_local_area_insert(TreeNode &node);
 bool setup_local_area_delete(TreeNode &node);
+
+typedef struct Operation {
+    int type;
+    int val; 
+} Operation_t;
+
+// Helper functions
+string operation_to_string(Operation_t operation);

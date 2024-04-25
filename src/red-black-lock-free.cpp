@@ -156,7 +156,10 @@ bool tree_validate(Tree &tree) {
   return validateAtBlackDepth(tree->root, &blackDepth, nullptr, nullptr);
 }
 
-TreeNode tree_find(Tree &tree, int val)
+TreeNode tree_find(Tree &tree, int val) {
+  // TODO
+  return nullptr;
+}
 
 // Return whether a node with given value exists in a Red-Black Tree
 bool tree_lookup(Tree &tree, int val) {
