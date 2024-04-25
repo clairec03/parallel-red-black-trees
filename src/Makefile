@@ -1,6 +1,6 @@
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -O3
+CXXFLAGS = -O3 -fopenmp
 
 # Target for sequential
 sequential: red-black-sequential-test.cpp red-black-sequential.h red-black-sequential.cpp
