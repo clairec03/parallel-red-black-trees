@@ -151,39 +151,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // TODO: Add *correct* code for random input fuzzing test later
-  // mixed_test
-
-
-  // Start Red-Black Testing Code Here
-  // int expected_size = 0;
-  // Tree tree = tree_init();
-  // for (auto& operation : operations) {
-  //   printf("%d, %d\n", operation.type, operation.val);
-  //   switch(operation.type) {
-  //     case INSERT:
-  //       if (tree_insert(tree, operation.val)) {
-  //         expected_size++;
-  //       }
-  //       break;
-  //     case DELETE:
-  //       if (tree_delete(tree, operation.val)) {
-  //         expected_size--;
-  //       }
-  //       break;
-  //     case LOOKUP:
-  //       tree_lookup(tree, operation.val);
-  //       break;
-  //   }
-  //   if (!tree_validate(tree)) {
-  //     cout << "Produced invalid Tree at operation " << operation_to_string(operation) << ".\n";
-  //     return 1;
-  //   }
-  //   else if (tree_size(tree) != expected_size) {
-  //     cout << "Produced Tree of wrong size at operation " << operation_to_string(operation) << ".\n";
-  //     return 1;
-  //   }
-  // }
   printf("Success.\n");
   return 0;
 }

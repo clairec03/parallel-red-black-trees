@@ -68,6 +68,7 @@ void is_in_local_area(TreeNode &node) {}
 
 /* Helper functions for insert */
 bool setup_local_area_insert(TreeNode &node) {
+  // Note: node and p are guaranteed to exist, gp and u are not
   TreeNode p = nullptr, gp = nullptr, u = nullptr;
   if (node) p = node->parent;
   if (p) gp = p->parent;
@@ -75,7 +76,7 @@ bool setup_local_area_insert(TreeNode &node) {
 
   // Setup Flags
   bool expected = false;
-  // TODO: do nullptr check for the nodes below
+
   if (node->marker != -1 || !node->flag.compare_exchange_weak(expected, true)) {
     return false;
   }
@@ -83,15 +84,20 @@ bool setup_local_area_insert(TreeNode &node) {
     node->flag = false;
     return false;
   }
+  if (!gp) {
+    return true;
+  }
   if (gp->marker != -1 || !gp->flag.compare_exchange_weak(expected, true)) {
     node->flag = false;
     p->flag = false;
+    printf("Failed at gp\n");
     return false;
   }
-  if (u->marker != -1 || !u->flag.compare_exchange_weak(expected, true)) {
+  if (u && (u->marker != -1 || !u->flag.compare_exchange_weak(expected, true))) {
     node->flag = false;
     p->flag = false;
-    gp->flag = false;
+    if (gp) gp->flag = false;
+    printf("Failed at u\n");
     return false;
   }
 
@@ -108,8 +114,8 @@ bool setup_local_area_insert(TreeNode &node) {
         // Writing to the i-th marker failed
         // Reset all flags
         p->flag = false;
-        gp->flag = false;   
-        u->flag = false;
+        if (gp) gp->flag = false;   
+        if (u) u->flag = false;
         
         // Reset all markers up to the (i-1)-th marker (inclusive)
         marker_node = gp;
@@ -119,7 +125,6 @@ bool setup_local_area_insert(TreeNode &node) {
             marker_node = marker_node->parent;
           }
         }
-
         return false;
       }
     }
@@ -128,6 +133,7 @@ bool setup_local_area_insert(TreeNode &node) {
 }
 
 bool setup_local_area_delete(TreeNode &node) {
+  // Note: node and p are guaranteed to exist, the other nodes in the local area are not
   TreeNode p = nullptr, w = nullptr, wlc = nullptr, wrc = nullptr;
   if (node) p = node->parent;
   if (p) w = p->child[p->child[1] != node];
@@ -146,18 +152,18 @@ bool setup_local_area_delete(TreeNode &node) {
     node->flag = false;
     return false;
   }
-  if (w->marker != -1 || !w->flag.compare_exchange_weak(expected, true)) {
+  if (!w || w->marker != -1 || !w->flag.compare_exchange_weak(expected, true)) {
     node->flag = false;
     p->flag = false;
     return false;
   }
-  if (wlc->marker != -1 || !wlc->flag.compare_exchange_weak(expected, true)) {
+  if (!wlc || wlc->marker != -1 || !wlc->flag.compare_exchange_weak(expected, true)) {
     node->flag = false;
     p->flag = false;
     w->flag = false;
     return false;
   }
-  if (wrc->marker != -1 || !wrc->flag.compare_exchange_weak(expected, true)) {
+  if (!wrc || wrc->marker != -1 || !wrc->flag.compare_exchange_weak(expected, true)) {
     node->flag = false;
     p->flag = false;
     w->flag = false;

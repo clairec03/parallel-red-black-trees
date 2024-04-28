@@ -194,9 +194,23 @@ bool tree_insert(Tree &tree, int val) {
     tree->root = newTreeNode(val, true, nullptr, nullptr, nullptr);
     return true;
   }
+  printf("%d\n", __LINE__);
 
+  
   // TODO: Search down to find where node would be
-  TreeNode parent;
+  TreeNode iter = tree->root;
+  TreeNode parent = tree->root->parent;
+
+  while (iter) {
+    parent = iter;
+
+    if (val == iter->val) {
+      return false;
+    } else {
+      iter = iter->child[(val > iter->val)];
+      // Insert into left child if true, right child if false
+    }
+  }
 
   // Place Node Where it Would be in the Tree Assuming No Rebalancing
   TreeNode node = newTreeNode(val, true, parent, nullptr, nullptr);
@@ -205,11 +219,16 @@ bool tree_insert(Tree &tree, int val) {
   } else {
     parent->child[1] = node;
   }
-
+  printf("%d\n", __LINE__);
   if (!setup_local_area_insert(node)) {
+    if (val < parent->val) {
+      parent->child[0] = nullptr;
+    } else {
+      parent->child[1] = nullptr;
+    }
     return tree_insert(tree, val);
   }
-  
+  printf("%d\n", __LINE__);  
   // Go Through the Cases of Tree Insertion
   // Source: https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insertion
   TreeNode grandparent;
@@ -221,14 +240,14 @@ bool tree_insert(Tree &tree, int val) {
       clear_local_area_insert(node);
       return true;
     }
-
+    printf("%d\n", __LINE__);
     // If Parent is Red Root, Turn Black and Return (I4)
     grandparent = parent->parent;
     if (!grandparent) {
       parent->red = false;
       return true;
     }
-
+    printf("%d\n", __LINE__);
     // Define Uncle as Grandparent's Other Child
     dir = parent->val > grandparent->val;
     uncle = grandparent->child[1-dir];
@@ -239,7 +258,7 @@ bool tree_insert(Tree &tree, int val) {
         node = parent;
         parent = grandparent->child[dir];
       }
-
+      printf("%d\n", __LINE__);
       rotateDir(tree, grandparent, 1-dir);
       parent->red = false;
       grandparent->red = true;
@@ -249,7 +268,7 @@ bool tree_insert(Tree &tree, int val) {
       clear_local_area_insert(node);
       return true;
     }
-
+    printf("%d\n", __LINE__);
     // Case parent and uncle are both red nodes
 
     // Parent and Uncle Both Red, Swap Parent + Grandparent Colors (I2)
@@ -261,10 +280,12 @@ bool tree_insert(Tree &tree, int val) {
     // Move local area up to the grandparent
     move_local_area_up(node); // TODO: Correctness check
     parent = node->parent;
+    printf("%d\n", __LINE__);
   }
-
+  printf("%d\n", __LINE__);
   // If We're the Root, Done (I3)
   clear_local_area_insert(node);
+  printf("%d\n", __LINE__);
   return true;
 }
 
@@ -273,6 +294,7 @@ void tree_insert_bulk(Tree &tree, vector<int> values, int batch_size, int num_th
   int num_operations = values.size();
   #pragma omp parallel for schedule(static, batch_size) num_threads(num_threads)
   for (int i = 0; i < num_operations; i++) {
+    printf("%d\n", __LINE__);
     tree_insert(tree, values[i]);
   }
   return;
