@@ -269,7 +269,7 @@ bool tree_insert(Tree &tree, int val) {
 }
 
 // Runs parallel insert on values
-vector<bool> tree_insert_bulk(Tree &tree, vector<int> values, int batch_size, int num_threads) {
+void tree_insert_bulk(Tree &tree, vector<int> values, int batch_size, int num_threads) {
   int num_operations = values.size();
   #pragma omp parallel for schedule(static, batch_size) num_threads(num_threads)
   for (int i = 0; i < num_operations; i++) {

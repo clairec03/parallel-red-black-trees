@@ -5,10 +5,12 @@
 
 using namespace std;
 
-#define INSERT 0
-#define DELETE 1
-#define LOOKUP 2
-
+enum OperationType {
+  INSERT,
+  DELETE,
+  LOOKUP,
+  EMPTY
+};
 
 typedef struct RedBlackNode {
   struct RedBlackNode* child[2];
@@ -28,6 +30,8 @@ Tree tree_init();
 bool tree_insert(Tree &tree, int val);
 bool tree_delete(Tree &tree, int val);
 bool tree_lookup(Tree &tree, int val);
+void tree_insert_bulk(Tree &tree, vector<int> values, int batch_size, int num_threads);
+void tree_delete_bulk(Tree &tree, vector<int> values, int batch_size, int num_threads);
 
 // (Sequential) Debug Functions
 int tree_size(Tree &tree);
