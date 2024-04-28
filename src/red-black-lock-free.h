@@ -46,8 +46,8 @@ bool setup_local_area_insert(TreeNode &node);
 bool setup_local_area_delete(TreeNode &node);
 
 typedef struct Operation {
-    int type;
-    int val; 
+  vector<int> values;
+  int type;
 } Operation_t;
 
 // Helper functions

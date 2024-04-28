@@ -12,5 +12,5 @@ parallel: red-black-lock-free-test.cpp red-black-lock-free.h red-black-lock-free
 
 # Clean target
 clean:
-	rm -f red-black-sequential
-	rm -f red-black-parallel
+	rm -f red-black-parallel red-black-sequential 
+	rm -f *.o

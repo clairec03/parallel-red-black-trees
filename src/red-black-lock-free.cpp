@@ -268,6 +268,16 @@ bool tree_insert(Tree &tree, int val) {
   return true;
 }
 
+// Runs parallel insert on values
+vector<bool> tree_insert_bulk(Tree &tree, vector<int> values, int batch_size, int num_threads) {
+  int num_operations = values.size();
+  #pragma omp parallel for schedule(static, batch_size) num_threads(num_threads)
+  for (int i = 0; i < num_operations; i++) {
+    tree_insert(tree, values[i]);
+  }
+  return;
+}
+
 // HELPER FUNCTIONS FOR DELETE (As per Wikipedia)
 bool delete_case_6(Tree &tree, TreeNode parent, TreeNode sibling, TreeNode distant_nephew, int dir) {
   rotateDir(tree, parent, dir);
@@ -410,16 +420,13 @@ bool tree_delete(Tree &tree, int val) {
     if (sibling->red) {
       // Case D3
       return delete_case_3(tree, parent, sibling, close_nephew, distant_nephew, dir);
-    }
-    else if (distant_nephew && distant_nephew->red) {
+    } else if (distant_nephew && distant_nephew->red) {
       // Case D6
       return delete_case_6(tree, parent, sibling, distant_nephew, dir);
-    }
-    else if (close_nephew && close_nephew->red) {
+    } else if (close_nephew && close_nephew->red) {
       // Case D5
       return delete_case_5(tree, parent, sibling, close_nephew, distant_nephew, dir);
-    }
-    else if (parent->red) {
+    } else if (parent->red) {
       // Case D4
       return delete_case_4(sibling, parent);
     }
@@ -429,5 +436,14 @@ bool tree_delete(Tree &tree, int val) {
     clear_local_area_delete(node);
   }
   return true;
+}
 
+// Runs parallel insert on values
+void tree_delete_bulk(Tree &tree, vector<int> values, int batch_size, int num_threads) {
+  int num_operations = values.size();
+  #pragma omp parallel for schedule(static, batch_size) num_threads(num_threads)
+  for (int i = 0; i < num_operations; i++) {
+      tree_delete(tree, values[i]);
+  }
+  return;
 }
