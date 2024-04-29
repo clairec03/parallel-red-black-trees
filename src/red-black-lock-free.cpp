@@ -189,13 +189,15 @@ bool tree_lookup(Tree &tree, int val) {
 
 // Inserts Node into Tree, returns True if Node Inserted (i.e. wasn't already present)
 bool tree_insert(Tree &tree, int val) {
+  vector<TreeNode> flagged_nodes;
+  printf("INSERTING %d\n", val);
   // Edge Case: Set root of Empty tree
   if (!tree->root) {
     tree->root = newTreeNode(val, true, nullptr, nullptr, nullptr);
     return true;
   }
   printf("%d\n", __LINE__);
-
+  print_tree(tree->root);
   
   // TODO: Search down to find where node would be
   TreeNode iter = tree->root;
@@ -214,19 +216,19 @@ bool tree_insert(Tree &tree, int val) {
 
   // Place Node Where it Would be in the Tree Assuming No Rebalancing
   TreeNode node = newTreeNode(val, true, parent, nullptr, nullptr);
+  
+  printf("%d\n", __LINE__);
+  print_tree(tree->root);
+  if (!setup_local_area_insert(node, flagged_nodes)) {
+    fprintf(stderr, "Failed to setup local area for insert\n"); 
+    // This should never be printed for n = 1
+    exit(1); // TODO: remove this line for n > 1
+    return tree_insert(tree, val);
+  }
   if (val < parent->val) {
     parent->child[0] = node;
   } else {
     parent->child[1] = node;
-  }
-  printf("%d\n", __LINE__);
-  if (!setup_local_area_insert(node)) {
-    if (val < parent->val) {
-      parent->child[0] = nullptr;
-    } else {
-      parent->child[1] = nullptr;
-    }
-    return tree_insert(tree, val);
   }
   printf("%d\n", __LINE__);  
   // Go Through the Cases of Tree Insertion
@@ -237,7 +239,7 @@ bool tree_insert(Tree &tree, int val) {
   while (node->parent) {
     // If Parent is Black, Chilling (I1)
     if (!parent->red) {
-      clear_local_area_insert(node);
+      clear_local_area_insert(node, flagged_nodes);
       return true;
     }
     printf("%d\n", __LINE__);
@@ -245,6 +247,7 @@ bool tree_insert(Tree &tree, int val) {
     grandparent = parent->parent;
     if (!grandparent) {
       parent->red = false;
+      clear_local_area_insert(node, flagged_nodes);
       return true;
     }
     printf("%d\n", __LINE__);
@@ -265,7 +268,7 @@ bool tree_insert(Tree &tree, int val) {
       // A little bit suspicious about this but idk
       // Like should local area change when we do rotations?
       // Since we're not storing as vectors, so flags will no longer be at same areas
-      clear_local_area_insert(node);
+      clear_local_area_insert(node, flagged_nodes);
       return true;
     }
     printf("%d\n", __LINE__);
@@ -284,7 +287,7 @@ bool tree_insert(Tree &tree, int val) {
   }
   printf("%d\n", __LINE__);
   // If We're the Root, Done (I3)
-  clear_local_area_insert(node);
+  clear_local_area_insert(node, flagged_nodes);
   printf("%d\n", __LINE__);
   return true;
 }
@@ -385,9 +388,11 @@ bool tree_delete(Tree &tree, int val) {
   TreeNode right_child = node->child[1];
   TreeNode child = left_child ? left_child : right_child;
 
+  vector<TreeNode> flagged_nodes;
+
   // One Node Case
   if (child) {
-    if (!setup_local_area_delete(node)) {
+    if (!setup_local_area_delete(node, flagged_nodes)) {
       return tree_delete(tree, val);
     }
 
@@ -427,7 +432,7 @@ bool tree_delete(Tree &tree, int val) {
   }
 
   // Node is childless and black (Delete Node and Rebalance)
-  int dir = parent->child[1] == node;
+  int dir = (parent->child[1] == node);
   parent->child[dir] = nullptr;
   TreeNode tmp = node;
   node = nullptr;
@@ -463,9 +468,9 @@ bool tree_delete(Tree &tree, int val) {
 // Runs parallel insert on values
 void tree_delete_bulk(Tree &tree, vector<int> values, int batch_size, int num_threads) {
   int num_operations = values.size();
+
   #pragma omp parallel for schedule(static, batch_size) num_threads(num_threads)
   for (int i = 0; i < num_operations; i++) {
       tree_delete(tree, values[i]);
   }
-  return;
 }

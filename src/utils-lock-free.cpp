@@ -1,27 +1,20 @@
 #include "red-black-lock-free.h"
-#include <stdlib.h>
+
+using namespace std;
 
 /* Helper functions for lock-free */
-void clear_local_area_insert(TreeNode &node) {
+void clear_local_area_insert(TreeNode &node, vector<TreeNode> flagged_nodes) {
   // Release all flags in the local area
-  TreeNode p = nullptr, gp = nullptr, u = nullptr;
-
   // First, reset all flags to false
-  if (node) {
+  for (auto &node : flagged_nodes) {
     node->flag = false;
-    p = node->parent;
-  }
-  if (p) {
-    p->flag = false;
-    gp = p->parent;
-  }
-  if (gp) {
-    u = gp->child[gp->child[1] != p];
-    if (u) u->flag = false;
   }
 
   // Then, clear all markers on up to 4 ancestors (including gp) and reset to -1
-  TreeNode marker_node = gp;
+  TreeNode p = node->parent;
+  if (!p) return;
+  TreeNode marker_node = p->parent;
+  
   for (int i = 0; i < 4; i++) {
     if (marker_node) {
       marker_node->marker = -1;
@@ -31,26 +24,14 @@ void clear_local_area_insert(TreeNode &node) {
 }
 
 
-void clear_local_area_delete(TreeNode &node) {
+void clear_local_area_delete(TreeNode &node, vector<TreeNode> flagged_nodes) {
   // Release all flags in the local area
   TreeNode p = nullptr, w = nullptr, wlc = nullptr, wrc = nullptr;
 
-  // First, reset all flags to false
-  if (node) {
+  // Reset all flags to false
+  for (auto &node : flagged_nodes) {
     node->flag = false;
-    p = node->parent;
   }
-  if (p) {
-    p->flag = false;
-    w = p->child[p->child[1] != node];
-  }
-  if (w) {
-    w->flag = false;
-    wlc = w->child[0];
-    wrc = w->child[1];
-  }
-  if (wlc) wlc->flag = false;
-  if (wrc) wrc->flag = false;
   
   // Then, clear all markers on up to 4 ancestors (including gp) and reset to -1
   if (!p) return; // If node is root, no need to clear markers
@@ -67,38 +48,28 @@ void clear_local_area_delete(TreeNode &node) {
 void is_in_local_area(TreeNode &node) {}
 
 /* Helper functions for insert */
-bool setup_local_area_insert(TreeNode &node) {
+bool setup_local_area_insert(TreeNode &node, vector<TreeNode> flagged_nodes) {
   // Note: node and p are guaranteed to exist, gp and u are not
   TreeNode p = nullptr, gp = nullptr, u = nullptr;
   if (node) p = node->parent;
   if (p) gp = p->parent;
   if (gp) u = gp->child[gp->child[1] != p];
 
-  // Setup Flags
+  // Set up Flags
   bool expected = false;
 
-  if (node->marker != -1 || !node->flag.compare_exchange_weak(expected, true)) {
-    return false;
-  }
-  if (p->marker != -1 || !p->flag.compare_exchange_weak(expected, true)) {
-    node->flag = false;
-    return false;
-  }
-  if (!gp) {
-    return true;
-  }
-  if (gp->marker != -1 || !gp->flag.compare_exchange_weak(expected, true)) {
-    node->flag = false;
-    p->flag = false;
-    printf("Failed at gp\n");
-    return false;
-  }
-  if (u && (u->marker != -1 || !u->flag.compare_exchange_weak(expected, true))) {
-    node->flag = false;
-    p->flag = false;
-    if (gp) gp->flag = false;
-    printf("Failed at u\n");
-    return false;
+  vector<TreeNode> nodes_to_be_flagged = {node, p, gp, u};
+
+  for (auto &node : nodes_to_be_flagged) {
+    if (node && (node->marker != -1 || !node->flag.compare_exchange_weak(expected, true))) {
+      // If the flag couldn't be set correctly, roll back the changes to flags and return false => return to root
+      for (auto &flagged_node : flagged_nodes) {
+        flagged_node->flag = false;
+      }
+      return false;
+    } else {
+      flagged_nodes.push_back(node);
+    }
   }
 
   int thread_id = omp_get_thread_num();
@@ -132,7 +103,7 @@ bool setup_local_area_insert(TreeNode &node) {
   return true;
 }
 
-bool setup_local_area_delete(TreeNode &node) {
+bool setup_local_area_delete(TreeNode &node, vector<TreeNode> flagged_nodes) {
   // Note: node and p are guaranteed to exist, the other nodes in the local area are not
   TreeNode p = nullptr, w = nullptr, wlc = nullptr, wrc = nullptr;
   if (node) p = node->parent;
@@ -143,32 +114,20 @@ bool setup_local_area_delete(TreeNode &node) {
   }
 
   // Setup flags for local area (all 5 nodes)
-  // TODO: do nullptr check for the nodes below
   bool expected = false;
-  if (node->marker != -1 || !node->flag.compare_exchange_weak(expected, true)) {
-    return false;
-  }
-  if (p->marker != -1 || !p->flag.compare_exchange_weak(expected, true)) {
-    node->flag = false;
-    return false;
-  }
-  if (!w || w->marker != -1 || !w->flag.compare_exchange_weak(expected, true)) {
-    node->flag = false;
-    p->flag = false;
-    return false;
-  }
-  if (!wlc || wlc->marker != -1 || !wlc->flag.compare_exchange_weak(expected, true)) {
-    node->flag = false;
-    p->flag = false;
-    w->flag = false;
-    return false;
-  }
-  if (!wrc || wrc->marker != -1 || !wrc->flag.compare_exchange_weak(expected, true)) {
-    node->flag = false;
-    p->flag = false;
-    w->flag = false;
-    wlc->flag = false;
-    return false;
+
+  vector<TreeNode> nodes_to_be_flagged = {node, p, w, wlc, wrc};
+
+  for (auto &node : nodes_to_be_flagged) {
+    if (node && (node->marker != -1 || !node->flag.compare_exchange_weak(expected, true))) {
+      // If the flag couldn't be set correctly, roll back the changes to flags and return false => return to root
+      for (auto &flagged_node : flagged_nodes) {
+        flagged_node->flag = false;
+      }
+      return false;
+    } else if (node) {
+      flagged_nodes.push_back(node);
+    }
   }
 
   int thread_id = omp_get_thread_num();
@@ -218,7 +177,7 @@ void move_local_area_up(TreeNode &node) {
   u = gp->child[gp->child[1] != p];
 
   // Remove flag from node, parent, and uncle
-  // By virute of moving up to gp, we know p and gp must already exist
+  // By virtue of moving up to gp, we know p and gp must already exist
   node->flag = false;
   p->flag = false;
   if (u) u->flag = false;
@@ -256,18 +215,19 @@ void move_local_area_up(TreeNode &node) {
   }
 }
 
-// string operation_to_string(struct Operation operation) {
-//   switch (operation.type) {
-//     case INSERT:
-//       return "INSERT " + std::to_string(operation.val);
-//       break;
-//     case DELETE:
-//       return "DELETE " + std::to_string(operation.val);
-//       break;
-//     case LOOKUP:
-//       return "LOOKUP " + std::to_string(operation.val);
-//       break;
-//     default:
-//       return "INVALID OPERATION";
-//   }
-// }
+void tree_to_vec(TreeNode &node, vector<int> &vec, vector<int> &flags) {
+  if (!node) return;
+  tree_to_vec(node->child[0], vec, flags);
+  vec.push_back(node->val);
+  flags.push_back(node->flag);
+  tree_to_vec(node->child[1], vec, flags);
+}
+
+void print_tree(TreeNode &node) {
+  std::vector<int> vec, flags;
+  tree_to_vec(node, vec, flags);
+  for (int i = 0; i < vec.size(); i++) {
+    printf("%d, flag %d\n", vec[i], flags[i]);
+  }
+  printf("\n");
+}

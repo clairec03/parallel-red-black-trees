@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <omp.h>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -38,6 +39,10 @@ int tree_size(Tree &tree);
 bool tree_validate(Tree &tree);
 string tree_to_string(Tree tree);
 vector<int> tree_to_vector(Tree &tree);
+
+// Lock-free Debug functions
+void tree_to_vec(TreeNode &node, vector<int> &vec, vector<int> &flags);
+void print_tree(TreeNode &node);
 
 // Helper Functions for Lock-free Operations
 void clear_local_area_insert(TreeNode &node);
