@@ -3,10 +3,13 @@
 using namespace std;
 
 /* Helper functions for lock-free */
-void clear_local_area_insert(TreeNode &node, vector<TreeNode> flagged_nodes) {
+void clear_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
   // Release all flags in the local area
   // First, reset all flags to false
+  printf("%ld flagged nodes\n", flagged_nodes.size());
   for (auto &node : flagged_nodes) {
+    printf("Setting flag of %d to false\n", node->val);
+    // No need to do null check since we know all nodes in flagged_nodes exist
     node->flag = false;
   }
 
@@ -24,7 +27,7 @@ void clear_local_area_insert(TreeNode &node, vector<TreeNode> flagged_nodes) {
 }
 
 
-void clear_local_area_delete(TreeNode &node, vector<TreeNode> flagged_nodes) {
+void clear_local_area_delete(TreeNode &node, vector<TreeNode> &flagged_nodes) {
   // Release all flags in the local area
   TreeNode p = nullptr, w = nullptr, wlc = nullptr, wrc = nullptr;
 
@@ -48,7 +51,7 @@ void clear_local_area_delete(TreeNode &node, vector<TreeNode> flagged_nodes) {
 void is_in_local_area(TreeNode &node) {}
 
 /* Helper functions for insert */
-bool setup_local_area_insert(TreeNode &node, vector<TreeNode> flagged_nodes) {
+bool setup_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
   // Note: node and p are guaranteed to exist, gp and u are not
   TreeNode p = nullptr, gp = nullptr, u = nullptr;
   if (node) p = node->parent;
@@ -67,7 +70,7 @@ bool setup_local_area_insert(TreeNode &node, vector<TreeNode> flagged_nodes) {
         flagged_node->flag = false;
       }
       return false;
-    } else {
+    } else if (node != nullptr) {
       flagged_nodes.push_back(node);
     }
   }
@@ -103,7 +106,7 @@ bool setup_local_area_insert(TreeNode &node, vector<TreeNode> flagged_nodes) {
   return true;
 }
 
-bool setup_local_area_delete(TreeNode &node, vector<TreeNode> flagged_nodes) {
+bool setup_local_area_delete(TreeNode &node, vector<TreeNode> &flagged_nodes) {
   // Note: node and p are guaranteed to exist, the other nodes in the local area are not
   TreeNode p = nullptr, w = nullptr, wlc = nullptr, wrc = nullptr;
   if (node) p = node->parent;
@@ -124,8 +127,9 @@ bool setup_local_area_delete(TreeNode &node, vector<TreeNode> flagged_nodes) {
       for (auto &flagged_node : flagged_nodes) {
         flagged_node->flag = false;
       }
+      flagged_nodes.clear();
       return false;
-    } else if (node) {
+    } else if (node != nullptr) {
       flagged_nodes.push_back(node);
     }
   }
@@ -209,6 +213,7 @@ void move_local_area_up(TreeNode &node) {
   for (int i = 0; i < 4; i++) { 
     if (marker_node) {
       while (marker_node->marker != -1 && marker_node->marker != thread_id);
+      // TODO: (optional) implement backoff to avoid busy waiting
       marker_node->marker = thread_id;
       marker_node = marker_node->parent;
     }

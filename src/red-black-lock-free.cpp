@@ -225,6 +225,7 @@ bool tree_insert(Tree &tree, int val) {
     exit(1); // TODO: remove this line for n > 1
     return tree_insert(tree, val);
   }
+  printf("flagged_nodes size: %ld in calling function\n", flagged_nodes.size());
   if (val < parent->val) {
     parent->child[0] = node;
   } else {
@@ -304,34 +305,36 @@ void tree_insert_bulk(Tree &tree, vector<int> values, int batch_size, int num_th
 }
 
 // HELPER FUNCTIONS FOR DELETE (As per Wikipedia)
-bool delete_case_6(Tree &tree, TreeNode parent, TreeNode sibling, TreeNode distant_nephew, int dir) {
+bool delete_case_6(Tree &tree, TreeNode parent, TreeNode sibling, TreeNode distant_nephew, int dir, vector<TreeNode> &flagged_nodes) {
   rotateDir(tree, parent, dir);
   sibling->red = parent->red;
   parent->red = false;
   distant_nephew->red = false;
-  clear_local_area_delete(parent);
+  clear_local_area_delete(parent, flagged_nodes);
   return true;
 }
 
 bool delete_case_5(Tree &tree, TreeNode parent, TreeNode sibling, 
-                   TreeNode close_nephew, TreeNode distant_nephew, int dir) {
+                   TreeNode close_nephew, TreeNode distant_nephew, int dir,
+                   vector<TreeNode> &flagged_nodes) {
   rotateDir(tree, sibling, 1-dir);
   sibling->red = true;
   close_nephew->red = false;
   distant_nephew = sibling;
   sibling = close_nephew;
-  return delete_case_6(tree, parent, sibling, distant_nephew, dir);
+  return delete_case_6(tree, parent, sibling, distant_nephew, dir, flagged_nodes);
 }
 
-bool delete_case_4(TreeNode &sibling, TreeNode &parent) {
+bool delete_case_4(TreeNode &sibling, TreeNode &parent, vector<TreeNode> &flagged_nodes) {
   sibling->red = true;
   parent->red = false;
-  clear_local_area_delete(parent);
+  clear_local_area_delete(parent, flagged_nodes);
   return true;
 }
 
 bool delete_case_3(Tree &tree, TreeNode parent, TreeNode sibling, 
-                   TreeNode close_nephew, TreeNode distant_nephew, int dir) {
+                   TreeNode close_nephew, TreeNode distant_nephew, int dir,
+                   vector<TreeNode> &flagged_nodes) {
   rotateDir(tree, parent, dir);
   parent->red = true;
   sibling->red = false;
@@ -339,11 +342,11 @@ bool delete_case_3(Tree &tree, TreeNode parent, TreeNode sibling,
   // now: P red && S black
   distant_nephew = sibling->child[1-dir];
   if (distant_nephew && distant_nephew->red)
-    return delete_case_6(tree, parent, sibling, distant_nephew, dir);
+    return delete_case_6(tree, parent, sibling, distant_nephew, dir, flagged_nodes);
   close_nephew = sibling->child[dir]; // close nephew
   if (close_nephew && close_nephew->red)
-    return delete_case_5(tree, parent, sibling, close_nephew, distant_nephew, dir);
-  return delete_case_4(sibling, parent);
+    return delete_case_5(tree, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
+  return delete_case_4(sibling, parent, flagged_nodes);
 }
 
 bool tree_delete(Tree &tree, int val) {
@@ -410,7 +413,7 @@ bool tree_delete(Tree &tree, int val) {
 
     child->red = false;
     delete node;
-    clear_local_area_delete(child);
+    clear_local_area_delete(child, flagged_nodes);
     return true;
   }
 
@@ -427,7 +430,7 @@ bool tree_delete(Tree &tree, int val) {
   if (node->red) {
     parent->child[parent->child[1] == node] = nullptr;
     delete node;
-    clear_local_area_delete(parent);
+    clear_local_area_delete(parent, flagged_nodes);
     return true;
   }
 
@@ -446,21 +449,21 @@ bool tree_delete(Tree &tree, int val) {
     close_nephew = sibling->child[dir];
     if (sibling->red) {
       // Case D3
-      return delete_case_3(tree, parent, sibling, close_nephew, distant_nephew, dir);
+      return delete_case_3(tree, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
     } else if (distant_nephew && distant_nephew->red) {
       // Case D6
-      return delete_case_6(tree, parent, sibling, distant_nephew, dir);
+      return delete_case_6(tree, parent, sibling, distant_nephew, dir, flagged_nodes);
     } else if (close_nephew && close_nephew->red) {
       // Case D5
-      return delete_case_5(tree, parent, sibling, close_nephew, distant_nephew, dir);
+      return delete_case_5(tree, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
     } else if (parent->red) {
       // Case D4
-      return delete_case_4(sibling, parent);
+      return delete_case_4(sibling, parent, flagged_nodes);
     }
     sibling->red = true;
     node = parent;
     parent = node->parent;
-    clear_local_area_delete(node);
+    clear_local_area_delete(node, flagged_nodes);
   }
   return true;
 }

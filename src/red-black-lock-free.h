@@ -45,8 +45,8 @@ void tree_to_vec(TreeNode &node, vector<int> &vec, vector<int> &flags);
 void print_tree(TreeNode &node);
 
 // Helper Functions for Lock-free Operations
-void clear_local_area_insert(TreeNode &node);
-void clear_local_area_delete(TreeNode &node);
+void clear_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes);
+void clear_local_area_delete(TreeNode &node, vector<TreeNode> &flagged_nodes);
 void is_in_local_area(TreeNode &node);
 void move_local_area_up(TreeNode &node);
 
