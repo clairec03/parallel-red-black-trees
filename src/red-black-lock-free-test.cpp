@@ -8,6 +8,8 @@
 #include <set>
 #include <sstream>
 #include <unordered_map>
+#include <chrono>
+#include <iomanip>
 
 using namespace std;
 
@@ -143,7 +145,7 @@ int main(int argc, char *argv[]) {
         printf("Testing failed\n");
         exit(1);
       }
-      for (int i = 0; i < tree_values.size(); i++) {
+      for (size_t i = 0; i < tree_values.size(); i++) {
         if (correct_values.find(tree_values[i]) == correct_values.end()) {
           printf("Tree contains value not present in correct code\n");
           printf("Testing failed\n");
@@ -152,8 +154,8 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  const double compute_time = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - compute_start).count();
-  std::cout << "Computation time (sec): " << std::fixed << std::setprecision(10) << compute_time << '\n';
+  const double compute_time = chrono::duration_cast<chrono::duration<double>>(chrono::steady_clock::now() - compute_start).count();
+  cout << "Computation time (sec): " << fixed << setprecision(10) << compute_time << '\n';
 
   printf("Success.\n");
   return 0;
