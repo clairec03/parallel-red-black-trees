@@ -42,7 +42,7 @@ vector<int> tree_to_vector(Tree &tree);
 
 // Lock-free Debug functions
 void tree_to_vec(TreeNode &node, vector<int> &vec, vector<int> &flags);
-void print_tree(TreeNode &node);
+// void print_tree(TreeNode &node);
 
 // Helper Functions for Lock-free Operations
 void clear_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes);
@@ -61,3 +61,7 @@ typedef struct Operation {
 
 // Helper functions
 string operation_to_string(Operation_t operation);
+
+// Parallel tree operations
+void tree_insert_bulk(Tree &tree, vector<int> values, int batch_size, int num_threads);
+void tree_delete_bulk(Tree &tree, vector<int> values, int batch_size, int num_threads);

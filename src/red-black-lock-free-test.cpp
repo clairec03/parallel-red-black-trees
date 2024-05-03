@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
   int num_operations, val;
   int num_threads = 1;
   int batch_size = 8;
-  bool correctness = false;
+  bool correctness = false; // Option to enable correctness checker
   vector<Operation_t> operations;
 
   while ((opt = getopt(argc, argv, "f:b:n:c")) != -1) {

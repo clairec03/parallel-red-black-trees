@@ -16,6 +16,10 @@ using namespace std;
 //    in the marker field of the node (omp_get_thread_num();). After the work in the local area
 //    is done, the thread resets its own markers and flags.
 
+/* Rotations cause the marker locations to change */
+// 1. For the insertion case, simply remove markers when done
+// 2. For the deletion case, the markers must be moved
+
 inline TreeNode newTreeNode(int val, bool red, TreeNode parent, 
                             TreeNode left, TreeNode right) {
   TreeNode node = new struct RedBlackNode();
@@ -467,6 +471,18 @@ bool tree_delete(Tree &tree, int val) {
   }
   return true;
 }
+
+/*
+get_markers_above()
+
+1. setup local area
+2. old_marker_nodes = get nodes with markers above curr node
+3. perform rotation
+4. mark the new set of 4 ancestor nodes with markers
+5. iterate over old_marker_nodes, clear markers
+6. clear local area
+
+*/
 
 // Runs parallel insert on values
 void tree_delete_bulk(Tree &tree, vector<int> values, int batch_size, int num_threads) {

@@ -220,19 +220,20 @@ void move_local_area_up(TreeNode &node) {
   }
 }
 
-void tree_to_vec(TreeNode &node, vector<int> &vec, vector<int> &flags) {
+void tree_to_vec(TreeNode &node, vector<int> &vec, vector<int> &flags, vector<int> &markers) {
   if (!node) return;
-  tree_to_vec(node->child[0], vec, flags);
+  tree_to_vec(node->child[0], vec, flags, markers);
   vec.push_back(node->val);
   flags.push_back(node->flag);
-  tree_to_vec(node->child[1], vec, flags);
+  markers.push_back(node->marker);
+  tree_to_vec(node->child[1], vec, flags, markers);
 }
 
 void print_tree(TreeNode &node) {
-  std::vector<int> vec, flags;
-  tree_to_vec(node, vec, flags);
+  std::vector<int> vec, flags, markers;
+  tree_to_vec(node, vec, flags, markers);
   for (int i = 0; i < vec.size(); i++) {
-    printf("%d, flag %d\n", vec[i], flags[i]);
+    printf("%d, flag %d, marker %d\n", vec[i], flags[i], markers[i]);
   }
   printf("\n");
 }
