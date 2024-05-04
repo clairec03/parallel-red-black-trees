@@ -13,18 +13,18 @@ def insert(f, op, num_ops, val_pool=None):
     if val_pool is not None: val_pool.update(str_values)
     f.write(" ".join(str_values) + "\n")
 
-def generate_test_cases(fpath, num_ops=10, max_len=1000, optype="both"):
+def generate_test_cases(fpath, num_ops=10, min_len=1, max_len=1000, optype="both"):
     with open(fpath, "w") as f:
         if optype == "insert":
             for _ in range(num_ops):
                 op = random.choice(operations[optype])
-                num_ops = random.randint(1, max_len)
+                num_ops = random.randint(min_len, max_len)
                 insert(f, op, num_ops, val_pool=None)
         elif optype == "both":
             val_pool = set()
             for _ in range(num_ops):
                 op = random.choice(operations["both"])
-                num_ops = random.randint(1, max_len)          
+                num_ops = random.randint(min_len, max_len)          
                 if op == "INSERT":
                     insert(f, op, num_ops, val_pool)
                 elif op == "DELETE":
@@ -42,6 +42,13 @@ num_ops = input("Enter the number of operations to generate: ")
 if len(num_ops) == 0:
     print("No number of operations specified. Defaulting to 10.")
     num_ops = 10
+min_len = input("Enter the minimum number of values in each operation: ")
+if len(min_len) == 0:
+    print("No minimum length specified. Defaulting to 1.")
+    min_len = 1
+if int(min_len) < 1:
+    print("Invalid minimum length. Defaulting to 1.")
+    min_len = 1
 max_len = input("Enter the maximum number of values in each operation: ")
 if len(max_len) == 0:
     print("No maximum length specified. Defaulting to 1000.")
@@ -57,4 +64,4 @@ if user_op_input not in operations:
     user_op_input = "both"
 
 filepath = os.getcwd() + f"/inputs/{filename}"
-generate_test_cases(filepath, int(num_ops), int(max_len), user_op_input)
+generate_test_cases(filepath, int(num_ops), int(min_len), int(max_len), user_op_input)
