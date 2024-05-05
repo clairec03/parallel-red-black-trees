@@ -471,12 +471,11 @@ bool tree_delete(Tree &tree, int val) {
   if (!node) {
     return false;
   }
-  TreeNode original_node = node;
-  // Default case: if no in-order successor in node's right child, set successor to node itself
-  TreeNode successor = node; 
+  TreeNode dn = node;
 
+  // Default case: if no in-order successor in node's right child, set start to node itself
+  TreeNode start = dn; 
   printf("%d\n", __LINE__);
-  // // printf("Node: %p (%d)\n", node, node->val);
 
   // Two Node Case
   if (node->child[0] && node->child[1]) {
@@ -484,27 +483,44 @@ bool tree_delete(Tree &tree, int val) {
     iter = node->child[1];
     while (iter->child[0]) {
       iter = iter->child[0];
-    }  
-    node->val = iter->val; // Replace current node's value with successor's value
-    node = iter; // Set node to be the successor
-    successor = iter; // Actually set the successor, since one exists 
+    }
+    // Moved value replacement to after calling `replace_parent` for correctness in parallel impl
+    node = iter; // Set node to be the successor - as in sequential impl
+    start = iter; // Actually set the successor, since one exists 
     parent = node->parent;
   }
   printf("%d\n", __LINE__);
   // // printf("Node: %p (%d)\n", node, node->val);
 
-  if (!successor) {
+  if (!start) {
     node->flag = false;
     return tree_delete(tree, val);
   }
 
+  vector<TreeNode> flagged_nodes;
+  printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
 
-  // TODO: Check what the value of `child` is  
-  TreeNode left_child = node->child[0];
-  TreeNode right_child = node->child[1];
+  if (!setup_local_area_delete(start, dn, flagged_nodes)) {
+    start->flag = false;
+    if (start != dn) {
+      dn->flag = false;
+    }
+    return tree_delete(tree, val);
+  }
+
+  printf("%d\n", __LINE__);
+
+  // Replace the value of the node to be deleted with the value of its in-order successor
+  if (start != dn) {
+    dn->val = start->val;
+  }
+  printf("%d\n", __LINE__);
+
+  // Get start's only child (note that the `start` could be `dn` if a successor doesn't exist)
+  TreeNode left_child = start->child[0];
+  TreeNode right_child = start->child[1];
   TreeNode child = left_child ? left_child : right_child;
 
-  vector<TreeNode> flagged_nodes;
   printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
 
   printf("%d\n", __LINE__);
@@ -512,10 +528,6 @@ bool tree_delete(Tree &tree, int val) {
 
   // One Node Case
   if (child) {
-    if (!setup_local_area_delete(successor, node, flagged_nodes)) {
-      return tree_delete(tree, val);
-    }
-
     printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
   // printf("Node: %p (%d)\n", node, node->val);
 
@@ -540,6 +552,9 @@ bool tree_delete(Tree &tree, int val) {
     
     return true;
   }
+  // Unlink the `start` node from the tree 
+  // Get `rn` (replacement node) - child of `start` which will replace succ
+
   printf("%d\n", __LINE__);
 
   // Node has no children
@@ -592,20 +607,22 @@ bool tree_delete(Tree &tree, int val) {
     if (sibling->red) { // Fixup cases 1 (red sibling) & 2 (sibling's children are black)
       // Case D3
       printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
-      return delete_case_3(tree, node, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
+      // Do fix up at child (= start->only_child)
+      return delete_case_3(tree, child, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
     } else if (distant_nephew && distant_nephew->red) {
-      // Case D6
+      // Case D6 - terminal case - NO fixup needed
       printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
       return delete_case_6(tree, parent, sibling, distant_nephew, dir, flagged_nodes);
     } else if (close_nephew && close_nephew->red) {
       // Case D5
       printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
-      return delete_case_5(tree, node, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
+      // Do fix up at child (= start->child)
+      return delete_case_5(tree, child, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
     } else if (parent->red) {
       // Case D4
       // print_tree(tree->root);
       printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
-      return delete_case_4(node, sibling, parent, flagged_nodes);
+      return delete_case_4(child, sibling, parent, flagged_nodes);
     }
     printf("%d\n", __LINE__);
     // Else case - node is red

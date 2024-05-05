@@ -106,26 +106,31 @@ bool setup_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
   return true;
 }
 
-bool setup_local_area_delete(TreeNode &successor, TreeNode &node, vector<TreeNode> &flagged_nodes) {
+bool setup_local_area_delete(TreeNode &start, TreeNode &node, vector<TreeNode> &flagged_nodes) {
+  // TODO: CHECK correctness
   // Note: node and p are guaranteed to exist, the other nodes in the local area are not
+  printf("setup_local_area_delete");
   TreeNode p = nullptr, w = nullptr, wlc = nullptr, wrc = nullptr;
-  if (successor) p = successor->parent;
+  TreeNode x = start->child[!start->child[0]]; // Get the only child of start - guaranteed to exist
+  if (start) p = start->parent;
   if (p) w = p->child[p->child[1] != node];
   if (w) {
     wlc = w->child[0];
     wrc = w->child[1];
   }
 
+  printf("%d\n", __LINE__);
+
   // Setup flags for local area (all 5 nodes)
   bool expected = false;
 
-  vector<TreeNode> nodes_to_be_flagged = {node, p, w, wlc, wrc};
+  vector<TreeNode> nodes_to_be_flagged = {x, w, p, wlc, wrc};
 
   for (auto &node : nodes_to_be_flagged) {
     if (node && (node->marker != -1 || !node->flag.compare_exchange_weak(expected, true))) {
       // If the flag couldn't be set correctly, roll back the changes to flags and return false => return to root
       for (auto &flagged_node : flagged_nodes) {
-        flagged_node->flag = false;
+        if (flagged_node != node) flagged_node->flag = false;
       }
       flagged_nodes.clear();
 
@@ -135,12 +140,17 @@ bool setup_local_area_delete(TreeNode &successor, TreeNode &node, vector<TreeNod
       printf("Node pushed\n");
     }
   }
+  printf("%d\n", __LINE__);
+
 
   int thread_id = omp_get_thread_num();
 
   if (!p) return true; // If node is root, no need to set markers
+  printf("%d - p (%p), gp (%p)\n", __LINE__, p, p->parent);
   TreeNode gp = p->parent;
   TreeNode marker_node = gp;
+  printf("%d\n", __LINE__);
+
 
   // Get 4 markers above the parent node
   for (int i = 0; i < 4; i++) {
@@ -151,11 +161,9 @@ bool setup_local_area_delete(TreeNode &successor, TreeNode &node, vector<TreeNod
       } else {
         // Writing to the i-th marker failed
         // Reset all flags
-        node->flag = false;
-        p->flag = false;
-        w->flag = false;
-        wlc->flag = false;
-        wrc->flag = false;
+        for (auto &flagged_node : flagged_nodes) {
+          if (flagged_node && flagged_node != node) flagged_node->flag = false;
+        }
         
         // Reset all markers up to the (i-1)-th marker (inclusive)
         marker_node = gp;
@@ -170,6 +178,8 @@ bool setup_local_area_delete(TreeNode &successor, TreeNode &node, vector<TreeNod
       }
     }
   }  
+  printf("%d\n", __LINE__);
+
   return true;
 }
 
