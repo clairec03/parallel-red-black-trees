@@ -16,7 +16,7 @@ void clear_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
   // Then, clear all markers on up to 4 ancestors (including gp) and reset to -1
   TreeNode p = node->parent;
   if (!p) return;
-  TreeNode marker_node = p->parent;
+  // TreeNode marker_node = p->parent;
   
   /* for (int i = 0; i < 4; i++) {
     if (marker_node) {
@@ -29,7 +29,6 @@ void clear_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
 
 void clear_local_area_delete(TreeNode &node, vector<TreeNode> &flagged_nodes) {
   // Release all flags in the local area
-  TreeNode p = nullptr, w = nullptr, wlc = nullptr, wrc = nullptr;
 
   // Reset all flags to false
   for (auto &node : flagged_nodes) {
@@ -37,11 +36,11 @@ void clear_local_area_delete(TreeNode &node, vector<TreeNode> &flagged_nodes) {
   }
   
   // Then, clear all markers on up to 4 ancestors (including gp) and reset to -1
-  if (!p) return; // If node is root, no need to clear markers
+  if (!node) return; // If node is root, no need to clear markers
 
   int thread_id = omp_get_thread_num();
 
-  TreeNode marker_node = p->parent;
+  TreeNode marker_node = node->parent;
   for (int i = 0; i < 4; i++) {
     if (marker_node && marker_node->marker == thread_id) {
       marker_node->marker = -1;
@@ -50,7 +49,6 @@ void clear_local_area_delete(TreeNode &node, vector<TreeNode> &flagged_nodes) {
   }
 }
 
-void is_in_local_area(TreeNode &node) {}
 
 /* Helper functions for insert */
 bool setup_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
@@ -77,7 +75,7 @@ bool setup_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
     }
   }
 
-  int thread_id = omp_get_thread_num();
+  // int thread_id = omp_get_thread_num();
 
   // Setup Markers
   /*TreeNode marker_node = gp;
@@ -301,6 +299,7 @@ bool get_markers_above_delete(TreeNode start, bool release) {
       }
     }
   }
+  return true;
 }
 
 
@@ -417,7 +416,7 @@ void tree_to_vec(TreeNode &node, vector<int> &vec, vector<int> &flags, vector<in
 void print_tree(TreeNode &node) {
   std::vector<int> vec, flags, markers;
   tree_to_vec(node, vec, flags, markers);
-  for (int i = 0; i < vec.size(); i++) {
+  for (size_t i = 0; i < vec.size(); i++) {
     printf("%d, flag %d, marker %d\n", vec[i], flags[i], markers[i]);
   }
   printf("\n");

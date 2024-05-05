@@ -17,7 +17,6 @@ int main(int argc, char *argv[]) {
   // Command Line Input Code (adapted from Lab 3)
   string input_filename;
   int opt;
-  bool insert_test = false;
   int num_operations, val;
   int num_threads = 1;
   int batch_size = 8;

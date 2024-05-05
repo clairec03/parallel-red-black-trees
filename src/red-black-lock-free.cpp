@@ -113,7 +113,7 @@ bool validateAtBlackDepth(TreeNode &root, int *blackDepth, int *lo, int *hi) {
   }
 
   // Root must follow BST invariant
-  if (lo && root->val <= *lo || hi && *hi <= root->val) {
+  if ((lo && root->val <= *lo) || (hi && *hi <= root->val)) {
     printf("BST Invariant Failed at %d! \n", root->val);
     return false;
   }
@@ -160,10 +160,10 @@ bool tree_validate(Tree &tree) {
   return validateAtBlackDepth(tree->root, &blackDepth, nullptr, nullptr);
 }
 
-TreeNode tree_find(Tree &tree, int val) {
-  // TODO
-  return nullptr;
-}
+// TreeNode tree_find(Tree &tree, int val) {
+//   // TODO
+//   return nullptr;
+// }
 
 // Return whether a node with given value exists in a Red-Black Tree
 bool tree_lookup(Tree &tree, int val) {
