@@ -275,7 +275,7 @@ bool delete_case_3(Tree &tree, TreeNode parent, TreeNode sibling,
   return delete_case_4(sibling, parent);
 }
 
-bool tree_delete (Tree &tree, int val) {
+bool tree_delete(Tree &tree, int val) {
   // Don't delete from an empty tree
   if (!tree->root) {
     return false;
@@ -325,8 +325,7 @@ bool tree_delete (Tree &tree, int val) {
       bool dir = parent->child[1] == node;
       parent->child[dir] = child;
       child->parent = parent;
-    }
-    else {
+    } else {
       // Node was root, set root
       tree->root = child;
       child->parent = nullptr;
