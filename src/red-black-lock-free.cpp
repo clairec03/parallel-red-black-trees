@@ -286,7 +286,7 @@ bool tree_insert(Tree &tree, int val) {
 
     node = grandparent;
     // Move local area up to the grandparent
-    move_local_area_up(node); // TODO: Correctness check
+    move_local_area_up_insert(node); // TODO: Correctness check
     parent = node->parent;
     printf("%d\n", __LINE__);
   }
@@ -310,6 +310,7 @@ void tree_insert_bulk(Tree &tree, vector<int> values, int batch_size, int num_th
 
 // HELPER FUNCTIONS FOR DELETE (As per Wikipedia)
 bool delete_case_6(Tree &tree, TreeNode parent, TreeNode sibling, TreeNode distant_nephew, int dir, vector<TreeNode> &flagged_nodes) {
+  // Fix up case 4 - do nothing
   rotateDir(tree, parent, dir);
   sibling->red = parent->red;
   parent->red = false;
@@ -318,38 +319,113 @@ bool delete_case_6(Tree &tree, TreeNode parent, TreeNode sibling, TreeNode dista
   return true;
 }
 
-bool delete_case_5(Tree &tree, TreeNode parent, TreeNode sibling, 
+bool delete_case_5(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling, 
                    TreeNode close_nephew, TreeNode distant_nephew, int dir,
                    vector<TreeNode> &flagged_nodes) {
-  rotateDir(tree, sibling, 1-dir);
-  sibling->red = true;
+  // Close nephew is red, distant nephew is black (possibly leaf node)
   close_nephew->red = false;
+  sibling->red = true;
+  rotateDir(tree, sibling, 1-dir);
   distant_nephew = sibling;
-  sibling = close_nephew;
+  sibling = close_nephew; // after rotation, the close nephew becomes sibling (parent->child[1-dir])
+  close_nephew = sibling->child[dir];
+
+  // Fix up case 3 - CHECK
+  TreeNode oldw = sibling->child[1-dir];
+  TreeNode old_disant_nephew = oldw->child[1-dir]; 
+
+  // Clear markers in the original local area
+  for (auto &node : flagged_nodes) {
+    node->marker = -1;
+  }
+
+  sibling->child[dir]->flag = true;
+  old_distant_nephew->flag = false;
+
+  // Reset the nodes in the local area after rotation
+  flagged_nodes.clear();
+  flagged_nodes.push_back(node);
+  flagged_nodes.push_back(parent);
+  flagged_nodes.push_back(sibling);
+  flagged_nodes.push_back(close_nephew);
+  flagged_nodes.push_back(distant_nephew);
+  // End of fix up case 3
+
   return delete_case_6(tree, parent, sibling, distant_nephew, dir, flagged_nodes);
 }
 
 bool delete_case_4(TreeNode &sibling, TreeNode &parent, vector<TreeNode> &flagged_nodes) {
+  // Fix up case 2 - both nephews are black
   sibling->red = true;
   parent->red = false;
+  // TODO: node = move_deleter_up(node);
+
+  // Start of moving deleter up
+
+
+  // End of moving deleter up
+
   clear_local_area_delete(parent, flagged_nodes);
   return true;
 }
 
-bool delete_case_3(Tree &tree, TreeNode parent, TreeNode sibling, 
+bool delete_case_3(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling, 
                    TreeNode close_nephew, TreeNode distant_nephew, int dir,
                    vector<TreeNode> &flagged_nodes) {
   rotateDir(tree, parent, dir);
   parent->red = true;
   sibling->red = false;
-  sibling = close_nephew;
-  // now: P red && S black
+  sibling = close_nephew; // after rotation, the close nephew becomes sibling (parent->child[1-dir])
   distant_nephew = sibling->child[1-dir];
+  close_nephew = sibling->child[dir];
+
+  // now: P red && S black
+  // Fixup case 1 - the old sibling is now the new grandparent - CHECK
+  // New grandparent is not in the local area, so clear its flag and set its marker to thread id  
+  TreeNode gp = parent->parent; // old sibling
+  TreeNode old_close_nephew = gp->child[dir], old_distant_nephew = gp->child[1-dir];
+
+  // Clear markers
+  if (gp->marker != -1 && gp->marker == gplc->marker) {
+    parent->marker = gp->marker;
+  }
+  
+  // Set grandparent's marker, then clear the flag
+  gp->marker = omp_get_thread_num();
+  gp->flag = false;
+  old_distant_nephew->flag = false;
+
+  // Since the old sibling has been moved up, the four flags markers have been shifted up
+  // The previous fourth marker is now 5 degrees away - clear it
+  TreeNode ancestor = gp;
+  for (int i = 0; i < 4; i++) {
+    ancestor = ancestor->parent;
+  }
+  if (ancestor)
+    ancestor->marker = -1; // Clear the fifth marker
+
+  // The new nephews are now in the local area, so set their flags to true
+  distant_nephew->flag = true;
+  close_nephew->flag = true;
+
+  // Reset the nodes in the local area after rotation
+  flagged_nodes.clear();
+  flagged_nodes.push_back(node);
+  flagged_nodes.push_back(parent);
+  flagged_nodes.push_back(sibling);
+  flagged_nodes.push_back(close_nephew);
+  flagged_nodes.push_back(distant_nephew);
+  // End of fixup case 1
+
   if (distant_nephew && distant_nephew->red)
+    // Fixup case 4 - do nothing
     return delete_case_6(tree, parent, sibling, distant_nephew, dir, flagged_nodes);
-  close_nephew = sibling->child[dir]; // close nephew
+  
   if (close_nephew && close_nephew->red)
-    return delete_case_5(tree, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
+    // Fixup case 3
+    return delete_case_5(tree, node, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
+  
+  // Both nephews are black - fixup case 2
   return delete_case_4(sibling, parent, flagged_nodes);
 }
 
@@ -445,25 +521,31 @@ bool tree_delete(Tree &tree, int val) {
   node = nullptr;
   delete tmp;
 
+  // Fix up by rebalancing the tree
+  // Proprogate the deletion up the tree until reaching root
+
   TreeNode sibling, close_nephew, distant_nephew;
   while (node != tree->root) {
     dir = parent->child[1] == node;
     sibling = parent->child[1-dir];
     distant_nephew = sibling->child[1-dir];
     close_nephew = sibling->child[dir];
-    if (sibling->red) {
+    
+    // In cases D3, D6, D5, D4, the node is black
+    if (sibling->red) { // Fixup cases 1 (red sibling) & 2 (sibling's children are black)
       // Case D3
-      return delete_case_3(tree, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
+      return delete_case_3(tree, node, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
     } else if (distant_nephew && distant_nephew->red) {
       // Case D6
       return delete_case_6(tree, parent, sibling, distant_nephew, dir, flagged_nodes);
     } else if (close_nephew && close_nephew->red) {
       // Case D5
-      return delete_case_5(tree, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
+      return delete_case_5(tree, node, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
     } else if (parent->red) {
       // Case D4
       return delete_case_4(sibling, parent, flagged_nodes);
     }
+    // Else case - node is red
     sibling->red = true;
     node = parent;
     parent = node->parent;
@@ -471,6 +553,8 @@ bool tree_delete(Tree &tree, int val) {
   }
   return true;
 }
+
+TreeNode delete_fixup(TreeNode node, )
 
 /*
 get_markers_above()

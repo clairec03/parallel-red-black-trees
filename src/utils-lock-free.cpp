@@ -173,12 +173,11 @@ bool setup_local_area_delete(TreeNode &node, vector<TreeNode> &flagged_nodes) {
 
 // Move Local Area Up when insert needs to go up a layer
 // NOTE: `node` here is the original node BEFORE moveup, not after!
-void move_local_area_up(TreeNode &node) {
+void move_local_area_up_insert(TreeNode &node) {
   // Define Parent, Grandparent, and Uncle of Original Node
-  TreeNode p, gp, u = nullptr;
-  p = node->parent;
-  gp = p->parent;
-  u = gp->child[gp->child[1] != p];
+  TreeNode p = node->parent;
+  TreeNode gp = p->parent;
+  TreeNode u = gp->child[gp->child[1] != p];
 
   // Remove flag from node, parent, and uncle
   // By virtue of moving up to gp, we know p and gp must already exist
@@ -218,6 +217,18 @@ void move_local_area_up(TreeNode &node) {
       marker_node = marker_node->parent;
     }
   }
+}
+
+// Move Local Area Up when delete needs to go up a layer
+// NOTE: `node` here is the original node BEFORE moveup, not after!
+// Called in delete_case_4 (which corresponds to fix up case 2 where both nephews are black)
+void move_local_area_up_delete(TreeNode &node) {
+  TreeNode p = node->parent;
+  TreeNode w = p->child[p->child[1] != node];
+  TreeNode wlc = w->child[0];
+  TreeNode wrc = w->child[1];
+  
+
 }
 
 void tree_to_vec(TreeNode &node, vector<int> &vec, vector<int> &flags, vector<int> &markers) {

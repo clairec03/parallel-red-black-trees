@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Now for the actual testing!
-  const auto compute_start = std::chrono::steady_clock::now();
+  const auto compute_start = chrono::steady_clock::now();
   
   Tree tree = tree_init();
   set<int> correct_values;
@@ -154,6 +154,7 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+  
   const double compute_time = chrono::duration_cast<chrono::duration<double>>(chrono::steady_clock::now() - compute_start).count();
   cout << "Computation time (sec): " << fixed << setprecision(10) << compute_time << '\n';
 

@@ -6,6 +6,8 @@
 
 using namespace std;
 
+#define DEFAULT_MARKER -1
+
 enum OperationType {
   INSERT,
   DELETE,
@@ -48,7 +50,11 @@ void tree_to_vec(TreeNode &node, vector<int> &vec, vector<int> &flags);
 void clear_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes);
 void clear_local_area_delete(TreeNode &node, vector<TreeNode> &flagged_nodes);
 void is_in_local_area(TreeNode &node);
-void move_local_area_up(TreeNode &node);
+void move_local_area_up_insert(TreeNode &node);
+void move_local_area_up_delete(TreeNode &node);
+bool get_markers_and_flags_above_delete()
+bool get_markers_above_delete()
+bool get_flags_above_delete()
 
 // Make sure to check the setup succeeded
 bool setup_local_area_insert(TreeNode &node);
