@@ -31,7 +31,8 @@ mpic++ -Wall -Wextra -O3 -std=c++2a -fopenmp -o red-black-parallel red-black-loc
 
 for TEST_CASE in basic bulk
 do
-    for OP in delete insert
+    for OP in insert
+    # for OP in delete insert
     do
         for NUMTHREADS in 1 2 4 8
         do

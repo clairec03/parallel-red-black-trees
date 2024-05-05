@@ -1,4 +1,4 @@
-# parallel-red-black-trees
+# Parallel Red-black Trees
 
 **Instructions:**
 
