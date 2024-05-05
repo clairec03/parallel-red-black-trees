@@ -39,9 +39,11 @@ void clear_local_area_delete(TreeNode &node, vector<TreeNode> &flagged_nodes) {
   // Then, clear all markers on up to 4 ancestors (including gp) and reset to -1
   if (!p) return; // If node is root, no need to clear markers
 
+  int thread_id = omp_get_thread_num();
+
   TreeNode marker_node = p->parent;
   for (int i = 0; i < 4; i++) {
-    if (marker_node) {
+    if (marker_node && marker_node->marker == thread_id) {
       marker_node->marker = -1;
       marker_node = marker_node->parent;
     }
@@ -254,59 +256,25 @@ void move_local_area_up_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) 
   }*/
 }
 
-bool get_flags_and_markers_above_delete(TreeNode &node) {
-  // TreeNode p = nullptr, w = nullptr, wlc = nullptr, wrc = nullptr;
-  // if (node) p = node->parent;
-  // if (p) w = p->child[p->child[1] != node];
-  // if (w) {
-  //   wlc = w->child[0];
-  //   wrc = w->child[1];
-  // }
 
-  // // Check if all flags are set
-  // if (node->flag || p->flag || w->flag || wlc->flag || wrc->flag) {
-  //   return false;
-  // }
-
-  // // Check if all markers are set
-  // if (node->marker == -1 || p->marker == -1 || w->marker == -1 || wlc->marker == -1 || wrc->marker == -1) {
-  //   return false;
-  // }
-
-  // return true;
-}
-
-// Move Local Area Up when delete needs to go up a layer
-// NOTE: `node` here is the original node BEFORE moveup, not after!
-// Called in delete_case_4 (which corresponds to fix up case 2 where both nephews are black)
-void move_local_area_up_delete(TreeNode &node) {
-  TreeNode p = node->parent;
-  TreeNode w = p->child[p->child[1] != node];
-  TreeNode wlc = w->child[0];
-  TreeNode wrc = w->child[1];
-  
-  while (!get_flags_and_markers_above_delete(node));
-
-
-  
-
-}
-
-bool get_markers_above_delete(TreeNode start, TreeNode z, bool release) {
+bool get_markers_above_delete(TreeNode start, bool release) {
   bool expected = false;
+  int thread_id = omp_get_thread_num();
 
   // Get flags to set markers myself without interference
   TreeNode prev = start;
   TreeNode cur = start->parent;
   for (int i = 1; i <= 4; i++) {
-    if (cur != z) {
+    if (cur) {
       if (!cur->flag.compare_exchange_weak(expected, true)) {
         return false;
       }
     }
-    if (cur != prev->parent || false) { // TODO: false => /* HAS OTHER MARKER */ 
+    if (cur != prev->parent || \
+      (cur->marker != DEFAULT_MARKER && cur->marker != thread_id)) {
+      // TODO: CHECK 2nd condition
       for (TreeNode tmp = start; tmp != cur->parent; tmp = tmp->parent) {
-        if (tmp != z) {
+        if (tmp) {
           tmp->flag = false;
         }
       }
@@ -327,13 +295,114 @@ bool get_markers_above_delete(TreeNode start, TreeNode z, bool release) {
   if (release) {
     cur = start->parent;
     for (int i = 1; i <= 4; i++) {
-      if (cur != z) {
+      if (cur) {
         cur->flag = false;
+        cur = cur->parent;
       }
-      cur = cur->parent;
     }
   }
 }
+
+
+bool get_flags_and_markers_above_delete(TreeNode &node) {
+  // Set four markers above the parent node and an additional marker for moving up during delete
+  if (!get_markers_above_delete(node, false)) {
+    return false;
+  }
+
+  int thread_id = omp_get_thread_num();
+
+  bool expected = false;
+  vector<TreeNode> flagged_nodes;
+  TreeNode curr = node;
+
+  for (int i = 0; i < 4; i++) {
+    curr = curr->parent;
+    flagged_nodes.push_back(curr);
+  }
+
+  curr = curr->parent;
+
+  if (!curr->flag.compare_exchange_weak(expected, true)) {
+    for (auto &node : flagged_nodes) {
+      node->flag = false;
+    }
+    flagged_nodes.clear();
+    return false;
+  }
+
+  if (curr != flagged_nodes[3]->parent || (curr != node && curr->marker != DEFAULT_MARKER && curr->marker != thread_id)) {
+    for (auto &node : flagged_nodes) {
+      node->flag = false;
+    }
+    flagged_nodes.clear();
+    curr->flag = false;
+    return false;
+  }
+
+  curr->marker = thread_id;
+  flagged_nodes[1]->flag = false;
+
+  return true;
+}
+
+bool set_moved_local_area_delete(TreeNode new_sibling, TreeNode new_sibling_lc, TreeNode new_sibling_rc) {
+  bool expected = false;
+  if (!new_sibling->flag.compare_exchange_weak(expected, true)) {
+    return false;
+  }
+  if (!new_sibling_lc->flag.compare_exchange_weak(expected, true)) {
+    new_sibling->flag = false;
+    return false;
+  }
+  if (!new_sibling_rc->flag.compare_exchange_weak(expected, true)) {
+    new_sibling->flag = false;
+    new_sibling_lc->flag = false;
+    return false;
+  }
+  return true;
+}
+
+// Move Local Area Up when delete needs to go up a layer
+// NOTE: `node` here is the original node BEFORE moveup, not after!
+// Called in delete_case_4 (which corresponds to fix up case 2 where both nephews are black)
+void move_local_area_up_delete(TreeNode &node, vector<TreeNode> &flagged_nodes) {
+  TreeNode p = node->parent; // old parent
+  TreeNode w = p->child[p->child[1] != node];
+  TreeNode wlc = w->child[0];
+  TreeNode wrc = w->child[1];
+  
+  while (!get_flags_and_markers_above_delete(node));
+
+  TreeNode new_node = p, new_parent = p->parent;
+  TreeNode new_sibling = new_parent->child[new_parent->child[1] != new_node];
+  TreeNode new_sibling_lc = new_sibling->child[0], new_sibling_rc = new_sibling->child[1];
+
+  // Move the following to a separate function
+
+  // Set the flags of the new local area
+  // for (auto &curr : flagged_nodes) {
+  //   if (curr != node) curr->flag = false;
+  // }
+  // Try ONE of above OR below
+  while (!set_moved_local_area_delete(new_sibling, new_sibling_lc, new_sibling_rc));
+
+  p->flag = false;
+  w->flag = false;
+  wlc->flag = false;
+  wrc->flag = false;
+
+  new_parent->marker = DEFAULT_MARKER;
+
+  // Record the changes to the new local area
+  flagged_nodes.clear();
+  flagged_nodes.push_back(new_node);
+  flagged_nodes.push_back(new_sibling);
+  flagged_nodes.push_back(new_parent);
+  flagged_nodes.push_back(new_sibling_lc);
+  flagged_nodes.push_back(new_sibling_rc);
+}
+
 
 void tree_to_vec(TreeNode &node, vector<int> &vec, vector<int> &flags, vector<int> &markers) {
   if (!node) return;
@@ -343,6 +412,7 @@ void tree_to_vec(TreeNode &node, vector<int> &vec, vector<int> &flags, vector<in
   markers.push_back(node->marker);
   tree_to_vec(node->child[1], vec, flags, markers);
 }
+
 
 void print_tree(TreeNode &node) {
   std::vector<int> vec, flags, markers;

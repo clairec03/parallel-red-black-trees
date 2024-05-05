@@ -353,16 +353,12 @@ bool delete_case_5(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling,
   return delete_case_6(tree, parent, sibling, distant_nephew, dir, flagged_nodes);
 }
 
-bool delete_case_4(TreeNode &sibling, TreeNode &parent, vector<TreeNode> &flagged_nodes) {
+bool delete_case_4(TreeNode &node, TreeNode &sibling, TreeNode &parent, vector<TreeNode> &flagged_nodes) {
   // Fix up case 2 - both nephews are black
   sibling->red = true;
   parent->red = false;
-  // TODO: node = move_deleter_up(node);
 
-  // Start of moving deleter up
-
-
-  // End of moving deleter up
+  move_local_area_up_delete(node, flagged_nodes); 
 
   clear_local_area_delete(parent, flagged_nodes);
   return true;
@@ -425,7 +421,7 @@ bool delete_case_3(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling,
     return delete_case_5(tree, node, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
   
   // Both nephews are black - fixup case 2
-  return delete_case_4(sibling, parent, flagged_nodes);
+  return delete_case_4(node, sibling, parent, flagged_nodes);
 }
 
 bool tree_delete(Tree &tree, int val) {
@@ -468,6 +464,11 @@ bool tree_delete(Tree &tree, int val) {
     node = iter; // Set node to be the successor
     successor = iter; // Actually set the successor, since one exists 
     parent = node->parent;
+  }
+
+  if (!successor) {
+    node->flag = false;
+    return tree_delete(tree, val);
   }
 
   
@@ -547,7 +548,7 @@ bool tree_delete(Tree &tree, int val) {
       return delete_case_5(tree, node, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
     } else if (parent->red) {
       // Case D4
-      return delete_case_4(sibling, parent, flagged_nodes);
+      return delete_case_4(node, sibling, parent, flagged_nodes);
     }
     // Else case - node is red
     sibling->red = true;

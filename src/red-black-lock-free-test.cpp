@@ -37,8 +37,10 @@ int main(int argc, char *argv[]) {
         break;
       case 'c':
         correctness = true;
+        break;
       default:
-        fprintf(stderr, "Usage: %s -f input_filename -n num_threads -b batch_size\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-f input_filename] [-n num_threads] [-b batch_size]\n", argv[0]);
+        fprintf(stderr, "Options: -c (enable correctness checker)\n");
         exit(EXIT_FAILURE);
     }
   }
