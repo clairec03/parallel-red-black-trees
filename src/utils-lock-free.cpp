@@ -106,10 +106,10 @@ bool setup_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
   return true;
 }
 
-bool setup_local_area_delete(TreeNode &node, vector<TreeNode> &flagged_nodes) {
+bool setup_local_area_delete(TreeNode &successor, TreeNode &node, vector<TreeNode> &flagged_nodes) {
   // Note: node and p are guaranteed to exist, the other nodes in the local area are not
   TreeNode p = nullptr, w = nullptr, wlc = nullptr, wrc = nullptr;
-  if (node) p = node->parent;
+  if (successor) p = successor->parent;
   if (p) w = p->child[p->child[1] != node];
   if (w) {
     wlc = w->child[0];
@@ -128,9 +128,11 @@ bool setup_local_area_delete(TreeNode &node, vector<TreeNode> &flagged_nodes) {
         flagged_node->flag = false;
       }
       flagged_nodes.clear();
+
       return false;
     } else if (node != nullptr) {
       flagged_nodes.push_back(node);
+      printf("Node pushed\n");
     }
   }
 
@@ -366,16 +368,22 @@ bool set_moved_local_area_delete(TreeNode new_sibling, TreeNode new_sibling_lc, 
 // NOTE: `node` here is the original node BEFORE moveup, not after!
 // Called in delete_case_4 (which corresponds to fix up case 2 where both nephews are black)
 void move_local_area_up_delete(TreeNode &node, vector<TreeNode> &flagged_nodes) {
+  printf("move_local_area_up_delete\n");
   TreeNode p = node->parent; // old parent
   TreeNode w = p->child[p->child[1] != node];
   TreeNode wlc = w->child[0];
   TreeNode wrc = w->child[1];
+  printf("%d\n", __LINE__);
   
   while (!get_flags_and_markers_above_delete(node));
+  
+  printf("%d\n", __LINE__);
 
   TreeNode new_node = p, new_parent = p->parent;
   TreeNode new_sibling = new_parent->child[new_parent->child[1] != new_node];
   TreeNode new_sibling_lc = new_sibling->child[0], new_sibling_rc = new_sibling->child[1];
+
+  printf("%d\n", __LINE__);
 
   // Move the following to a separate function
 
@@ -386,12 +394,18 @@ void move_local_area_up_delete(TreeNode &node, vector<TreeNode> &flagged_nodes) 
   // Try ONE of above OR below
   while (!set_moved_local_area_delete(new_sibling, new_sibling_lc, new_sibling_rc));
 
+  printf("%d\n", __LINE__);
+
   p->flag = false;
   w->flag = false;
   wlc->flag = false;
   wrc->flag = false;
 
+  printf("%d\n", __LINE__);
+
   new_parent->marker = DEFAULT_MARKER;
+
+  printf("%d\n", __LINE__);
 
   // Record the changes to the new local area
   flagged_nodes.clear();
@@ -414,6 +428,7 @@ void tree_to_vec(TreeNode &node, vector<int> &vec, vector<int> &flags, vector<in
 
 
 void print_tree(TreeNode &node) {
+  printf("---------------Printing tree---------------\n");
   std::vector<int> vec, flags, markers;
   tree_to_vec(node, vec, flags, markers);
   for (size_t i = 0; i < vec.size(); i++) {

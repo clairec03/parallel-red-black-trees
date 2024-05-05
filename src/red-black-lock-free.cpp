@@ -193,6 +193,9 @@ bool tree_lookup(Tree &tree, int val) {
 
 // Inserts Node into Tree, returns True if Node Inserted (i.e. wasn't already present)
 bool tree_insert(Tree &tree, int val) {
+  // printf("Inserting element %d\n", val);
+  // printf("________________________\n");
+  // print_tree(tree->root);
   vector<TreeNode> flagged_nodes;
   // printf("INSERTING %d\n", val);
   // Edge Case: Set root of Empty tree
@@ -299,9 +302,14 @@ bool tree_insert(Tree &tree, int val) {
 // Runs parallel insert on values
 void tree_insert_bulk(Tree &tree, vector<int> values, int batch_size, int num_threads) {
   int num_operations = values.size();
-  #pragma omp parallel for schedule(static, batch_size) num_threads(num_threads)
+
+  #pragma omp parallel for schedule(dynamic, batch_size) num_threads(num_threads)
   for (int i = 0; i < num_operations; i++) {
+    // if (rounded_size > num_operations) {
+    //   continue;
+    // }
     // printf("%d\n", __LINE__);
+    printf("Inserting %d at index %d\n", values[i], i);
     tree_insert(tree, values[i]);
   }
   return;
@@ -309,6 +317,7 @@ void tree_insert_bulk(Tree &tree, vector<int> values, int batch_size, int num_th
 
 // HELPER FUNCTIONS FOR DELETE (As per Wikipedia)
 bool delete_case_6(Tree &tree, TreeNode parent, TreeNode sibling, TreeNode distant_nephew, int dir, vector<TreeNode> &flagged_nodes) {
+  printf("delete_case_6\n");  
   // Fix up case 4 - do nothing
   rotateDir(tree, parent, dir);
   sibling->red = parent->red;
@@ -321,6 +330,7 @@ bool delete_case_6(Tree &tree, TreeNode parent, TreeNode sibling, TreeNode dista
 bool delete_case_5(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling, 
                    TreeNode close_nephew, TreeNode distant_nephew, int dir,
                    vector<TreeNode> &flagged_nodes) {
+  printf("delete_case_5\n");  
   // Close nephew is red, distant nephew is black (possibly leaf node)
   close_nephew->red = false;
   sibling->red = true;
@@ -354,19 +364,26 @@ bool delete_case_5(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling,
 }
 
 bool delete_case_4(TreeNode &node, TreeNode &sibling, TreeNode &parent, vector<TreeNode> &flagged_nodes) {
+  printf("delete_case_4\n");  
+  printf("args: %p, %p, %p, %p\n", node, sibling, parent, sibling->child[0]);
   // Fix up case 2 - both nephews are black
   sibling->red = true;
+  printf("%d\n", __LINE__);
   parent->red = false;
+  printf("%d\n", __LINE__);
 
   move_local_area_up_delete(node, flagged_nodes); 
+  printf("%d\n", __LINE__);
 
   clear_local_area_delete(parent, flagged_nodes);
+  printf("%d\n", __LINE__);
   return true;
 }
 
 bool delete_case_3(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling, 
                    TreeNode close_nephew, TreeNode distant_nephew, int dir,
                    vector<TreeNode> &flagged_nodes) {
+  printf("delete_case_3\n");  
   rotateDir(tree, parent, dir);
   parent->red = true;
   sibling->red = false;
@@ -425,6 +442,7 @@ bool delete_case_3(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling,
 }
 
 bool tree_delete(Tree &tree, int val) {
+  printf("%d\n", __LINE__);
   // Don't delete from an empty tree
   if (!tree->root) {
     return false;
@@ -435,6 +453,8 @@ bool tree_delete(Tree &tree, int val) {
   TreeNode iter = tree->root;
   TreeNode parent = tree->root->parent;
 
+  printf("%d\n", __LINE__);
+
   while (iter) {
     if (val == iter->val) {
       break;
@@ -444,6 +464,8 @@ bool tree_delete(Tree &tree, int val) {
       iter = iter->child[(val > iter->val)];
     }
   }
+  printf("%d\n", __LINE__);
+
   // If we never found the node to delete, don't delete it
   node = iter;
   if (!node) {
@@ -452,6 +474,9 @@ bool tree_delete(Tree &tree, int val) {
   TreeNode original_node = node;
   // Default case: if no in-order successor in node's right child, set successor to node itself
   TreeNode successor = node; 
+
+  printf("%d\n", __LINE__);
+  // // printf("Node: %p (%d)\n", node, node->val);
 
   // Two Node Case
   if (node->child[0] && node->child[1]) {
@@ -465,25 +490,36 @@ bool tree_delete(Tree &tree, int val) {
     successor = iter; // Actually set the successor, since one exists 
     parent = node->parent;
   }
+  printf("%d\n", __LINE__);
+  // // printf("Node: %p (%d)\n", node, node->val);
 
   if (!successor) {
     node->flag = false;
     return tree_delete(tree, val);
   }
 
-  
+
+  // TODO: Check what the value of `child` is  
   TreeNode left_child = node->child[0];
   TreeNode right_child = node->child[1];
   TreeNode child = left_child ? left_child : right_child;
 
   vector<TreeNode> flagged_nodes;
+  printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
+
+  printf("%d\n", __LINE__);
+  // // printf("Node: %p (%d)\n", node, node->val);
 
   // One Node Case
   if (child) {
-    if (!setup_local_area_delete(node, flagged_nodes)) {
+    if (!setup_local_area_delete(successor, node, flagged_nodes)) {
       return tree_delete(tree, val);
     }
 
+    printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
+  // printf("Node: %p (%d)\n", node, node->val);
+
+  
     // Replace Node with its extant child
     if (parent) {
       // Node had parent, set parent's child
@@ -498,9 +534,13 @@ bool tree_delete(Tree &tree, int val) {
 
     child->red = false;
     delete node;
+    printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
     clear_local_area_delete(child, flagged_nodes);
+    printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
+    
     return true;
   }
+  printf("%d\n", __LINE__);
 
   // Node has no children
   // If Node is the root, just delete it
@@ -511,13 +551,18 @@ bool tree_delete(Tree &tree, int val) {
     return true;
   }
 
+  printf("%d\n", __LINE__);
+
   // If Node is red, just delete it
   if (node->red) {
     parent->child[parent->child[1] == node] = nullptr;
     delete node;
+    printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
     clear_local_area_delete(parent, flagged_nodes);
+    printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
     return true;
   }
+  printf("%d\n", __LINE__);
 
   // Node is childless and black (Delete Node and Rebalance)
   int dir = (parent->child[1] == node);
@@ -526,10 +571,14 @@ bool tree_delete(Tree &tree, int val) {
   node = nullptr;
   delete tmp;
 
+  printf("%d\n", __LINE__);
+  // printf("Node: %p (%d)\n", node, node->val);
+
   // Fix up by rebalancing the tree
   // Proprogate the deletion up the tree until reaching root
 
   TreeNode sibling, close_nephew, distant_nephew;
+  printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
   while (node != tree->root) {
     dir = parent->child[1] == node;
     sibling = parent->child[1-dir];
@@ -537,25 +586,39 @@ bool tree_delete(Tree &tree, int val) {
     close_nephew = sibling->child[dir];
     
     // In cases D3, D6, D5, D4, the node is black
+    printf("%d\n", __LINE__);
+    // // printf("Node: %p (%d)\n", node, node->val);
+
     if (sibling->red) { // Fixup cases 1 (red sibling) & 2 (sibling's children are black)
       // Case D3
+      printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
       return delete_case_3(tree, node, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
     } else if (distant_nephew && distant_nephew->red) {
       // Case D6
+      printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
       return delete_case_6(tree, parent, sibling, distant_nephew, dir, flagged_nodes);
     } else if (close_nephew && close_nephew->red) {
       // Case D5
+      printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
       return delete_case_5(tree, node, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
     } else if (parent->red) {
       // Case D4
+      // print_tree(tree->root);
+      printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
       return delete_case_4(node, sibling, parent, flagged_nodes);
     }
+    printf("%d\n", __LINE__);
     // Else case - node is red
     sibling->red = true;
     node = parent;
     parent = node->parent;
+    printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
     clear_local_area_delete(node, flagged_nodes);
+    printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
+    printf("%d\n", __LINE__);
   }
+  printf("%d\n", __LINE__);
+
   return true;
 }
 
@@ -579,6 +642,7 @@ void tree_delete_bulk(Tree &tree, vector<int> values, int batch_size, int num_th
 
   #pragma omp parallel for schedule(static, batch_size) num_threads(num_threads)
   for (int i = 0; i < num_operations; i++) {
+      print_tree(tree->root);
       tree_delete(tree, values[i]);
   }
 }

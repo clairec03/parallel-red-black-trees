@@ -44,7 +44,7 @@ vector<int> tree_to_vector(Tree &tree);
 
 // Lock-free Debug functions
 void tree_to_vec(TreeNode &node, vector<int> &vec, vector<int> &flags);
-// void print_tree(TreeNode &node);
+void print_tree(TreeNode &node);
 
 // Helper Functions for Lock-free Operations
 void clear_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes);
@@ -57,7 +57,7 @@ bool get_markers_and_flags_above_delete(TreeNode &node);
 
 // Make sure to check the setup succeeded
 bool setup_local_area_insert(TreeNode &node);
-bool setup_local_area_delete(TreeNode &node);
+bool setup_local_area_delete(TreeNode &successor, TreeNode &node, vector<TreeNode> &flagged_nodes);
 
 typedef struct Operation {
   vector<int> values;

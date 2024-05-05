@@ -103,20 +103,30 @@ int main(int argc, char *argv[]) {
   }
 
   // Testing!
+  // const auto compute_start = 0, compute_end = 0;
+  double compute_time = 0;
+
   const auto compute_start = chrono::steady_clock::now();
-  
   Tree tree = tree_init();
+  const auto compute_end = chrono::steady_clock::now();
+  compute_time += chrono::duration_cast<chrono::duration<double>>(compute_end - compute_start).count();
   set<int> correct_values;
   for (Operation_t operation : operations) {
     if (operation.type == INSERT) {
+      const auto compute_start = chrono::steady_clock::now();
       tree_insert_bulk(tree, operation.values, batch_size, num_threads);
+      const auto compute_end = chrono::steady_clock::now();
+      compute_time += chrono::duration_cast<chrono::duration<double>>(compute_end - compute_start).count();
       if (correctness) {
         for (auto value : operation.values) {
           correct_values.insert(value);
         }
       }
     } else if (operation.type == DELETE) {
+      const auto compute_start = chrono::steady_clock::now();
       tree_delete_bulk(tree, operation.values, batch_size, num_threads);
+      const auto compute_end = chrono::steady_clock::now();
+      compute_time += chrono::duration_cast<chrono::duration<double>>(compute_end - compute_start).count();
       if (correctness) {
         for (auto value : operation.values) {
           correct_values.erase(value);
@@ -132,8 +142,10 @@ int main(int argc, char *argv[]) {
       // Ensure tree has correct elems
       vector<int> tree_values = tree_to_vector(tree);
       if (tree_values.size() != correct_values.size()) {
-        printf("Tree has incorrect size\n");
+        printf("Tree has incorrect size.\n");
+        printf("Expecting %ld elements. Found %ld elements.\n", correct_values.size(), tree_values.size());
         printf("Testing failed\n");
+        // print_tree(tree->root);
         exit(1);
       }
       for (size_t i = 0; i < tree_values.size(); i++) {
@@ -146,7 +158,6 @@ int main(int argc, char *argv[]) {
     }
   }
   
-  const double compute_time = chrono::duration_cast<chrono::duration<double>>(chrono::steady_clock::now() - compute_start).count();
   cout << "Computation time (sec): " << fixed << setprecision(10) << compute_time << '\n';
 
   printf("Success.\n");
