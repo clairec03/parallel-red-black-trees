@@ -27,7 +27,7 @@ inline TreeNode newTreeNode(int val, bool red, TreeNode parent,
   node->child[1] = right;
   node->parent = parent;
   node->val = val;
-  node->marker = -1; // Initialized to -1
+  node->marker = DEFAULT_MARKER; // Initialized to DEFAULT_MARKER
   node->flag = false;
   node->red = red;
   return node;
@@ -194,14 +194,14 @@ bool tree_lookup(Tree &tree, int val) {
 // Inserts Node into Tree, returns True if Node Inserted (i.e. wasn't already present)
 bool tree_insert(Tree &tree, int val) {
   vector<TreeNode> flagged_nodes;
-  printf("INSERTING %d\n", val);
+  // printf("INSERTING %d\n", val);
   // Edge Case: Set root of Empty tree
   if (!tree->root) {
     tree->root = newTreeNode(val, true, nullptr, nullptr, nullptr);
     return true;
   }
-  printf("%d\n", __LINE__);
-  print_tree(tree->root);
+  // printf("%d\n", __LINE__);
+  // print_tree(tree->root);
   
   // TODO: Search down to find where node would be
   TreeNode iter = tree->root;
@@ -221,21 +221,20 @@ bool tree_insert(Tree &tree, int val) {
   // Place Node Where it Would be in the Tree Assuming No Rebalancing
   TreeNode node = newTreeNode(val, true, parent, nullptr, nullptr);
   
-  printf("%d\n", __LINE__);
-  print_tree(tree->root);
+  // printf("%d\n", __LINE__);
+  // print_tree(tree->root);
   if (!setup_local_area_insert(node, flagged_nodes)) {
-    fprintf(stderr, "Failed to setup local area for insert\n"); 
+    // fprintf(stderr, "Failed to setup local area for insert\n"); 
     // This should never be printed for n = 1
-    exit(1); // TODO: remove this line for n > 1
     return tree_insert(tree, val);
   }
-  printf("flagged_nodes size: %ld in calling function\n", flagged_nodes.size());
+  // printf("flagged_nodes size: %ld in calling function\n", flagged_nodes.size());
   if (val < parent->val) {
     parent->child[0] = node;
   } else {
     parent->child[1] = node;
   }
-  printf("%d\n", __LINE__);  
+  // printf("%d\n", __LINE__);  
   // Go Through the Cases of Tree Insertion
   // Source: https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insertion
   TreeNode grandparent;
@@ -247,7 +246,7 @@ bool tree_insert(Tree &tree, int val) {
       clear_local_area_insert(node, flagged_nodes);
       return true;
     }
-    printf("%d\n", __LINE__);
+    // printf("%d\n", __LINE__);
     // If Parent is Red Root, Turn Black and Return (I4)
     grandparent = parent->parent;
     if (!grandparent) {
@@ -255,7 +254,7 @@ bool tree_insert(Tree &tree, int val) {
       clear_local_area_insert(node, flagged_nodes);
       return true;
     }
-    printf("%d\n", __LINE__);
+    // printf("%d\n", __LINE__);
     // Define Uncle as Grandparent's Other Child
     dir = parent->val > grandparent->val;
     uncle = grandparent->child[1-dir];
@@ -266,7 +265,7 @@ bool tree_insert(Tree &tree, int val) {
         node = parent;
         parent = grandparent->child[dir];
       }
-      printf("%d\n", __LINE__);
+      // printf("%d\n", __LINE__);
       rotateDir(tree, grandparent, 1-dir);
       parent->red = false;
       grandparent->red = true;
@@ -276,7 +275,7 @@ bool tree_insert(Tree &tree, int val) {
       clear_local_area_insert(node, flagged_nodes);
       return true;
     }
-    printf("%d\n", __LINE__);
+    // printf("%d\n", __LINE__);
     // Case parent and uncle are both red nodes
 
     // Parent and Uncle Both Red, Swap Parent + Grandparent Colors (I2)
@@ -284,16 +283,16 @@ bool tree_insert(Tree &tree, int val) {
     uncle->red = false;
     grandparent->red = true;
 
-    node = grandparent;
     // Move local area up to the grandparent
-    move_local_area_up_insert(node); // TODO: Correctness check
+    move_local_area_up_insert(node, flagged_nodes); // TODO: Correctness check
+    node = grandparent;
     parent = node->parent;
-    printf("%d\n", __LINE__);
+    // printf("%d\n", __LINE__);
   }
-  printf("%d\n", __LINE__);
+  // printf("%d\n", __LINE__);
   // If We're the Root, Done (I3)
   clear_local_area_insert(node, flagged_nodes);
-  printf("%d\n", __LINE__);
+  // printf("%d\n", __LINE__);
   return true;
 }
 
@@ -302,7 +301,7 @@ void tree_insert_bulk(Tree &tree, vector<int> values, int batch_size, int num_th
   int num_operations = values.size();
   #pragma omp parallel for schedule(static, batch_size) num_threads(num_threads)
   for (int i = 0; i < num_operations; i++) {
-    printf("%d\n", __LINE__);
+    // printf("%d\n", __LINE__);
     tree_insert(tree, values[i]);
   }
   return;
@@ -332,11 +331,11 @@ bool delete_case_5(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling,
 
   // Fix up case 3 - CHECK
   TreeNode oldw = sibling->child[1-dir];
-  TreeNode old_disant_nephew = oldw->child[1-dir]; 
+  TreeNode old_distant_nephew = oldw->child[1-dir]; 
 
   // Clear markers in the original local area
   for (auto &node : flagged_nodes) {
-    node->marker = -1;
+    node->marker = DEFAULT_MARKER;
   }
 
   sibling->child[dir]->flag = true;
@@ -386,7 +385,7 @@ bool delete_case_3(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling,
   TreeNode old_close_nephew = gp->child[dir], old_distant_nephew = gp->child[1-dir];
 
   // Clear markers
-  if (gp->marker != -1 && gp->marker == gplc->marker) {
+  if (gp->marker != DEFAULT_MARKER && gp->marker == old_close_nephew->marker) {
     parent->marker = gp->marker;
   }
   
@@ -402,7 +401,7 @@ bool delete_case_3(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling,
     ancestor = ancestor->parent;
   }
   if (ancestor)
-    ancestor->marker = -1; // Clear the fifth marker
+    ancestor->marker = DEFAULT_MARKER; // Clear the fifth marker
 
   // The new nephews are now in the local area, so set their flags to true
   distant_nephew->flag = true;
@@ -454,6 +453,9 @@ bool tree_delete(Tree &tree, int val) {
   if (!node) {
     return false;
   }
+  TreeNode original_node = node;
+  // Default case: if no in-order successor in node's right child, set successor to node itself
+  TreeNode successor = node; 
 
   // Two Node Case
   if (node->child[0] && node->child[1]) {
@@ -462,10 +464,12 @@ bool tree_delete(Tree &tree, int val) {
     while (iter->child[0]) {
       iter = iter->child[0];
     }  
-    node->val = iter->val;
-    node = iter;
+    node->val = iter->val; // Replace current node's value with successor's value
+    node = iter; // Set node to be the successor
+    successor = iter; // Actually set the successor, since one exists 
     parent = node->parent;
   }
+
   
   TreeNode left_child = node->child[0];
   TreeNode right_child = node->child[1];
@@ -554,7 +558,7 @@ bool tree_delete(Tree &tree, int val) {
   return true;
 }
 
-TreeNode delete_fixup(TreeNode node, )
+// TreeNode delete_fixup(TreeNode node, )
 
 /*
 get_markers_above()

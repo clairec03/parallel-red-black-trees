@@ -101,17 +101,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  printf("Printing inputs:\n");
-  for (auto& operation : operations) {
-    printf("Operation %d\n", operation.type);
-    printf("Values:\n");
-    for (auto& val : operation.values) {
-      printf("%d ", val);
-    }
-    printf("\n");
-  }
-
-  // Now for the actual testing!
+  // Testing!
   const auto compute_start = chrono::steady_clock::now();
   
   Tree tree = tree_init();
