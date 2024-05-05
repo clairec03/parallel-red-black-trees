@@ -501,6 +501,7 @@ bool tree_delete(Tree &tree, int val) {
   printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
 
   if (!setup_local_area_delete(start, dn, flagged_nodes)) {
+    printf("setup_local_area_delete failed\n");
     start->flag = false;
     if (start != dn) {
       dn->flag = false;

@@ -27,6 +27,55 @@ void clear_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
 }
 
 
+bool get_markers_above_delete(TreeNode start, TreeNode node_ignore, bool release) {
+  bool expected = false;
+  int thread_id = omp_get_thread_num();
+
+  // Get flags to set markers myself without interference
+  TreeNode prev = start;
+  TreeNode cur = start->parent;
+  for (int i = 0; i < 4; i++) {
+    if (cur && cur != node_ignore) {
+      if (!cur->flag.compare_exchange_weak(expected, true)) {
+        return false;
+      }
+    }
+    if (cur != prev->parent || \
+      (cur->marker != DEFAULT_MARKER && cur->marker != thread_id)) {
+      // TODO: CHECK 2nd condition
+      for (TreeNode tmp = start; tmp != cur->parent; tmp = tmp->parent) {
+        if (tmp) {
+          tmp->flag = false;
+        }
+      }
+      return false;
+    }
+    prev = cur;
+    cur = cur->parent;
+  }
+
+  // Set Markers now that you have the flags
+  cur = start->parent;
+  for (int i = 0; i < 4; i++) {
+    // TODO: NULL CHECK
+    cur->marker = omp_get_thread_num();
+    cur = cur->parent;
+  }
+
+  // Remove flags if u want
+  if (release) {
+    cur = start->parent;
+    for (int i = 0; i < 4; i++) {
+      if (cur && cur != node_ignore) {
+        cur->flag = false;
+        cur = cur->parent;
+      }
+    }
+  }
+  return true;
+}
+
+
 void clear_local_area_delete(TreeNode &node, vector<TreeNode> &flagged_nodes) {
   // Release all flags in the local area
 
@@ -107,78 +156,157 @@ bool setup_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
 }
 
 bool setup_local_area_delete(TreeNode &start, TreeNode &node, vector<TreeNode> &flagged_nodes) {
-  // TODO: CHECK correctness
+  // TODO: CHECK correctness - CHECK SIMILARITY
   // Note: node and p are guaranteed to exist, the other nodes in the local area are not
-  printf("setup_local_area_delete");
-  TreeNode p = nullptr, w = nullptr, wlc = nullptr, wrc = nullptr;
+  printf("setup_local_area_delete\n");
+
   TreeNode x = start->child[!start->child[0]]; // Get the only child of start - guaranteed to exist
-  if (start) p = start->parent;
-  if (p) w = p->child[p->child[1] != node];
+
+  bool expected = false;
+  printf("Start: %d, Node: %d\n, left child %p, right child %p\n", start->val, start->val, start->child[0], start->child[1]);
+
+  if (x && !x->flag.compare_exchange_weak(expected, true)) {
+    printf("Failed to set flag of x\n");
+    return false;
+  }
+  if (!x) printf("x is null\n");
+
+  TreeNode p = start->parent;
+  if (!p) printf("p is null\n");
+
+  // Try setting the flag of the parent and ensure p is not the node we're trying to delete
+  if (p && p != node && !(p->flag.compare_exchange_weak(expected, true))) {
+    x->flag = false;
+    return false;
+  }
+
+  // This checks if the parent remains the same
+  if (p != start->parent) {
+    if (p != node) p->flag = false;
+    x->flag = false;
+    return false;
+  }
+
+  TreeNode w = p->child[p->child[1] != node];
+
+  if (!w->flag.compare_exchange_weak(expected, true)) {
+    if (p != node) p->flag = false;
+    x->flag = false;
+    return false;
+  }
+
+  TreeNode wlc = nullptr, wrc = nullptr;
   if (w) {
     wlc = w->child[0];
     wrc = w->child[1];
-  }
 
-  printf("%d\n", __LINE__);
-
-  // Setup flags for local area (all 5 nodes)
-  bool expected = false;
-
-  vector<TreeNode> nodes_to_be_flagged = {x, w, p, wlc, wrc};
-
-  for (auto &node : nodes_to_be_flagged) {
-    if (node && (node->marker != -1 || !node->flag.compare_exchange_weak(expected, true))) {
-      // If the flag couldn't be set correctly, roll back the changes to flags and return false => return to root
-      for (auto &flagged_node : flagged_nodes) {
-        if (flagged_node != node) flagged_node->flag = false;
-      }
-      flagged_nodes.clear();
-
+    if (wlc && !wlc->flag.compare_exchange_weak(expected, true)) {
+      if (p != node) p->flag = false;
+      w->flag = false;
+      x->flag = false;
       return false;
-    } else if (node != nullptr) {
-      flagged_nodes.push_back(node);
-      printf("Node pushed\n");
+    }
+
+    if (wrc && !wrc->flag.compare_exchange_weak(expected, true)) {
+      if (p != node) p->flag = false;
+      w->flag = false;
+      wlc->flag = false;
+      x->flag = false;
+      return false;
     }
   }
-  printf("%d\n", __LINE__);
 
-
-  int thread_id = omp_get_thread_num();
-
-  if (!p) return true; // If node is root, no need to set markers
-  printf("%d - p (%p), gp (%p)\n", __LINE__, p, p->parent);
-  TreeNode gp = p->parent;
-  TreeNode marker_node = gp;
-  printf("%d\n", __LINE__);
-
-
-  // Get 4 markers above the parent node
-  for (int i = 0; i < 4; i++) {
-    if (marker_node) {
-      if (marker_node->marker == -1) {
-        marker_node->marker = thread_id;
-        marker_node = marker_node->parent;
-      } else {
-        // Writing to the i-th marker failed
-        // Reset all flags
-        for (auto &flagged_node : flagged_nodes) {
-          if (flagged_node && flagged_node != node) flagged_node->flag = false;
-        }
-        
-        // Reset all markers up to the (i-1)-th marker (inclusive)
-        marker_node = gp;
-        for (int j = 0; j < i - 1; j++) {
-          if (marker_node) {
-            marker_node->marker = -1;
-            marker_node = marker_node->parent;
-          }
-        }
-
-        return false;
-      }
+  // Check the four markers above the parent node by setting the flags
+  if (!get_markers_above_delete(p, node, true)) {
+    if (x) x->flag = false;
+    if (w) {
+      w->flag = false;
+      wlc->flag = false;
+      wrc->flag = false;
     }
-  }  
-  printf("%d\n", __LINE__);
+    if (p != node) p->flag = false;
+    return false;
+  }
+
+  flagged_nodes.push_back(x);
+  flagged_nodes.push_back(w);
+  flagged_nodes.push_back(p);
+  if (w) {
+    flagged_nodes.push_back(wlc);
+    flagged_nodes.push_back(wrc);
+  }
+
+
+
+  // TreeNode p = nullptr, w = nullptr, wlc = nullptr, wrc = nullptr;
+  // TreeNode x = start->child[!start->child[0]]; // Get the only child of start - guaranteed to exist
+  // if (start) p = start->parent;
+  // if (p) w = p->child[p->child[1] != node];
+  // if (w) {
+  //   wlc = w->child[0];
+  //   wrc = w->child[1];
+  // }
+
+  // printf("%d\n", __LINE__);
+
+  // // Setup flags for local area (all 5 nodes)
+  // bool expected = false;
+
+  // vector<TreeNode> nodes_to_be_flagged = {x, w, p, wlc, wrc};
+
+  // for (auto &node : nodes_to_be_flagged) {
+  //   if (node && (node->marker != -1 || !node->flag.compare_exchange_weak(expected, true))) {
+  //     // If the flag couldn't be set correctly, roll back the changes to flags and return false => return to root
+  //     for (auto &flagged_node : flagged_nodes) {
+  //       if (flagged_node != node) flagged_node->flag = false;
+  //     }
+  //     flagged_nodes.clear();
+
+  //     return false;
+  //   } else if (node != nullptr) {
+  //     flagged_nodes.push_back(node);
+  //     printf("Node pushed\n");
+  //   }
+  // }
+  // printf("%d\n", __LINE__);
+
+
+  // int thread_id = omp_get_thread_num();
+
+  // if (!p) return true; // If node is root, no need to set markers
+  // printf("%d - p (%p), gp (%p)\n", __LINE__, p, p->parent);
+  // TreeNode gp = p->parent;
+  // TreeNode marker_node = gp;
+  // printf("%d\n", __LINE__);
+
+
+  // // Get 4 markers above the parent node
+  // for (int i = 0; i < 4; i++) {
+  //   if (marker_node) {
+  //     if (marker_node->marker == -1) {
+  //       marker_node->marker = thread_id;
+  //       marker_node = marker_node->parent;
+  //     } else {
+  //       // Writing to the i-th marker failed
+  //       // Reset all flags
+  //       for (auto &flagged_node : flagged_nodes) {
+  //         if (flagged_node && flagged_node != node) flagged_node->flag = false;
+  //       }
+        
+  //       // Reset all markers up to the (i-1)-th marker (inclusive)
+  //       marker_node = gp;
+  //       for (int j = 0; j < i - 1; j++) {
+  //         if (marker_node) {
+  //           marker_node->marker = -1;
+  //           marker_node = marker_node->parent;
+  //         }
+  //       }
+
+  //       return false;
+  //     }
+  //   }
+  // }  
+  // printf("%d\n", __LINE__);
 
   return true;
 }
@@ -267,57 +395,9 @@ void move_local_area_up_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) 
 }
 
 
-bool get_markers_above_delete(TreeNode start, bool release) {
-  bool expected = false;
-  int thread_id = omp_get_thread_num();
-
-  // Get flags to set markers myself without interference
-  TreeNode prev = start;
-  TreeNode cur = start->parent;
-  for (int i = 1; i <= 4; i++) {
-    if (cur) {
-      if (!cur->flag.compare_exchange_weak(expected, true)) {
-        return false;
-      }
-    }
-    if (cur != prev->parent || \
-      (cur->marker != DEFAULT_MARKER && cur->marker != thread_id)) {
-      // TODO: CHECK 2nd condition
-      for (TreeNode tmp = start; tmp != cur->parent; tmp = tmp->parent) {
-        if (tmp) {
-          tmp->flag = false;
-        }
-      }
-      return false;
-    }
-    prev = cur;
-    cur = cur->parent;
-  }
-
-  // Set Markers now that you have the flags
-  cur = start->parent;
-  for (int i = 1; i <= 4; i++) {
-    cur->marker = omp_get_thread_num();
-    cur = cur->parent;
-  }
-
-  // Remove flags if u want
-  if (release) {
-    cur = start->parent;
-    for (int i = 1; i <= 4; i++) {
-      if (cur) {
-        cur->flag = false;
-        cur = cur->parent;
-      }
-    }
-  }
-  return true;
-}
-
-
 bool get_flags_and_markers_above_delete(TreeNode &node) {
   // Set four markers above the parent node and an additional marker for moving up during delete
-  if (!get_markers_above_delete(node, false)) {
+  if (!get_markers_above_delete(node, nullptr, false)) { // TODO: DELETE THIS LATER, 2nd arg incorrect
     return false;
   }
 
