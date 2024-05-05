@@ -366,16 +366,13 @@ bool tree_delete(Tree &tree, int val) {
     if (sibling->red) {
       // Case D3
       return delete_case_3(tree, parent, sibling, close_nephew, distant_nephew, dir);
-    }
-    else if (distant_nephew && distant_nephew->red) {
+    } else if (distant_nephew && distant_nephew->red) {
       // Case D6
       return delete_case_6(tree, parent, sibling, distant_nephew, dir);
-    }
-    else if (close_nephew && close_nephew->red) {
+    } else if (close_nephew && close_nephew->red) {
       // Case D5
       return delete_case_5(tree, parent, sibling, close_nephew, distant_nephew, dir);
-    }
-    else if (parent->red) {
+    } else if (parent->red) {
       // Case D4
       return delete_case_4(sibling, parent);
     }
