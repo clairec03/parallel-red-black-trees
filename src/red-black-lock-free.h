@@ -26,6 +26,7 @@ typedef struct RedBlackNode {
 
 typedef struct RedBlackTree {
   TreeNode root;
+  atomic<bool> root_flag; // Used to ensure only one node sets root value
 } *Tree;
 
 // Tree Functions

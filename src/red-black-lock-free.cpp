@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <sched.h>
 #include <omp.h>
+#include<unistd.h>
+
 
 using namespace std;
 
@@ -23,18 +25,29 @@ using namespace std;
 inline TreeNode newTreeNode(int val, bool red, TreeNode parent, 
                             TreeNode left, TreeNode right) {
   TreeNode node = new struct RedBlackNode();
+  node->flag = true; // To prevent anyone else from touching while I init
   node->child[0] = left;
   node->child[1] = right;
   node->parent = parent;
   node->val = val;
   node->marker = DEFAULT_MARKER; // Initialized to DEFAULT_MARKER
-  node->flag = false;
   node->red = red;
+  node->flag = false;
   return node;
 }
 
 TreeNode rotateDir(Tree &tree, TreeNode &root, int dir) {
+  // printf("BEGIN ROTATION\n");
+  if (tree->root == root) {
+    // Check for livelock
+    bool expected = false;
+    while (!tree->root_flag.compare_exchange_weak(expected, true)) {
+      expected = false;
+    }
+  }
+
   TreeNode parent = root->parent;
+  // If root involved in rotation, flag the tree root
   TreeNode rotatingChild = root->child[1-dir];
   // assert(rotatingChild);
   TreeNode C = rotatingChild->child[dir];
@@ -51,6 +64,11 @@ TreeNode rotateDir(Tree &tree, TreeNode &root, int dir) {
   } else {
     tree->root = rotatingChild;
   }
+  // If root involved in rotation, flag the tree root
+  if (tree->root == rotatingChild) {
+    tree->root_flag = false;
+  }
+  // printf("END ROTATION\n");
   return rotatingChild;
 }
 
@@ -160,11 +178,6 @@ bool tree_validate(Tree &tree) {
   return validateAtBlackDepth(tree->root, &blackDepth, nullptr, nullptr);
 }
 
-// TreeNode tree_find(Tree &tree, int val) {
-//   // TODO
-//   return nullptr;
-// }
-
 // Return whether a node with given value exists in a Red-Black Tree
 bool tree_lookup(Tree &tree, int val) {
   TreeNode node = tree->root;
@@ -193,63 +206,80 @@ bool tree_lookup(Tree &tree, int val) {
 
 // Inserts Node into Tree, returns True if Node Inserted (i.e. wasn't already present)
 bool tree_insert(Tree &tree, int val) {
-  // printf("Inserting element %d\n", val);
-  // printf("________________________\n");
-  // print_tree(tree->root);
+  // printf("Thread %d called insert on val %d\n", omp_get_thread_num(), val);
   vector<TreeNode> flagged_nodes;
-  // printf("INSERTING %d\n", val);
+
+  // First, get tree root access
+  bool expected = false;
+  while (!tree->root_flag.compare_exchange_weak(expected, true)) {
+    expected = false;
+  }
   // Edge Case: Set root of Empty tree
   if (!tree->root) {
     tree->root = newTreeNode(val, true, nullptr, nullptr, nullptr);
+    tree->root_flag = false;
+    printf("Thread %d, created root val: %d\n", omp_get_thread_num(), tree->root->val);
     return true;
   }
-  // printf("%d\n", __LINE__);
-  // print_tree(tree->root);
-  
-  // TODO: Search down to find where node would be
+  tree->root_flag = false;
+
+  // Search down hand-over-hand to find where node would be
   TreeNode iter = tree->root;
-  TreeNode parent = tree->root->parent;
+  if (!iter->flag.compare_exchange_weak(expected, true)) {
+    // printf("[WARN] Local Not Acquired for thread %d, val: %d\n", omp_get_thread_num(), iter->val);
+    return tree_insert(tree, val);
+  }
+  // Finally removing root access
+  // printf("Local Acquired for thread %d, val: %d\n", omp_get_thread_num(), iter->val);
+  TreeNode parent = nullptr;
 
   while (iter) {
     parent = iter;
-
     if (val == iter->val) {
+      // Node already in the tree, remove flag and continue
+      iter->flag = false;
       return false;
     } else {
+      // Node not in the tree, search down and get new flag
       iter = iter->child[(val > iter->val)];
-      // Insert into left child if true, right child if false
+      if (iter && !iter->flag.compare_exchange_weak(expected, true)) {
+        // printf("[WARN] Local Not Acquired for thread %d, val: %d\n", omp_get_thread_num(), iter->val);
+        parent->flag = false;
+        // printf("Local Relinquished for thread %d, val: %d\n", omp_get_thread_num(), parent->val);
+        return tree_insert(tree, val);
+      }
+      // if (iter) printf("Local Acquired for thread %d, val: %d\n", omp_get_thread_num(), iter->val);
+      if (iter) {
+        parent->flag = false;
+        // printf("Local Relinquished for thread %d, val: %d\n", omp_get_thread_num(), parent->val);
+      }
     }
   }
 
   // Place Node Where it Would be in the Tree Assuming No Rebalancing
   TreeNode node = newTreeNode(val, true, parent, nullptr, nullptr);
-  
-  // printf("%d\n", __LINE__);
-  // print_tree(tree->root);
+  node->flag = true; // Does NOT need to be compare and swapped because parent already locked down
+  // printf("Local Acquired for thread %d, val: %d\n", omp_get_thread_num(), node->val);
   if (!setup_local_area_insert(node, flagged_nodes)) {
-    // fprintf(stderr, "Failed to setup local area for insert\n"); 
-    // This should never be printed for n = 1
     return tree_insert(tree, val);
   }
-  // printf("flagged_nodes size: %ld in calling function\n", flagged_nodes.size());
   if (val < parent->val) {
     parent->child[0] = node;
   } else {
     parent->child[1] = node;
   }
-  // printf("%d\n", __LINE__);  
   // Go Through the Cases of Tree Insertion
   // Source: https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insertion
   TreeNode grandparent;
   TreeNode uncle;
   int dir;
   while (node->parent) {
+    // printf("HERE! %d\n", omp_get_thread_num());
     // If Parent is Black, Chilling (I1)
     if (!parent->red) {
       clear_local_area_insert(node, flagged_nodes);
       return true;
     }
-    // printf("%d\n", __LINE__);
     // If Parent is Red Root, Turn Black and Return (I4)
     grandparent = parent->parent;
     if (!grandparent) {
@@ -257,7 +287,6 @@ bool tree_insert(Tree &tree, int val) {
       clear_local_area_insert(node, flagged_nodes);
       return true;
     }
-    // printf("%d\n", __LINE__);
     // Define Uncle as Grandparent's Other Child
     dir = parent->val > grandparent->val;
     uncle = grandparent->child[1-dir];
@@ -268,7 +297,6 @@ bool tree_insert(Tree &tree, int val) {
         node = parent;
         parent = grandparent->child[dir];
       }
-      // printf("%d\n", __LINE__);
       rotateDir(tree, grandparent, 1-dir);
       parent->red = false;
       grandparent->red = true;
@@ -278,7 +306,6 @@ bool tree_insert(Tree &tree, int val) {
       clear_local_area_insert(node, flagged_nodes);
       return true;
     }
-    // printf("%d\n", __LINE__);
     // Case parent and uncle are both red nodes
 
     // Parent and Uncle Both Red, Swap Parent + Grandparent Colors (I2)
@@ -290,12 +317,9 @@ bool tree_insert(Tree &tree, int val) {
     move_local_area_up_insert(node, flagged_nodes); // TODO: Correctness check
     node = grandparent;
     parent = node->parent;
-    // printf("%d\n", __LINE__);
   }
-  // printf("%d\n", __LINE__);
   // If We're the Root, Done (I3)
   clear_local_area_insert(node, flagged_nodes);
-  // printf("%d\n", __LINE__);
   return true;
 }
 
@@ -303,13 +327,11 @@ bool tree_insert(Tree &tree, int val) {
 void tree_insert_bulk(Tree &tree, vector<int> values, int batch_size, int num_threads) {
   int num_operations = values.size();
 
-  #pragma omp parallel for schedule(dynamic, batch_size) num_threads(num_threads)
+  int threads_needed = min(num_operations, num_threads);
+  printf("%lu\n", values.size());
+  #pragma omp parallel for schedule(dynamic, batch_size) num_threads(threads_needed)
   for (int i = 0; i < num_operations; i++) {
-    // if (rounded_size > num_operations) {
-    //   continue;
-    // }
-    // printf("%d\n", __LINE__);
-    printf("Inserting %d at index %d\n", values[i], i);
+    // printf("Thread %d inserting %d\n", omp_get_thread_num(), values[i]);
     tree_insert(tree, values[i]);
   }
   return;

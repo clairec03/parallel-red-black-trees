@@ -1,0 +1,472 @@
+Input file: inputs/bulk_delete.txt
+---------------Printing tree---------------
+-1744368933, flag 0, marker -1
+-1426561410, flag 0, marker -1
+-1388083945, flag 0, marker -1
+-1323832112, flag 0, marker -1
+-1250757343, flag 0, marker -1
+-941487675, flag 0, marker -1
+-895085755, flag 0, marker -1
+-892353087, flag 0, marker -1
+-767997417, flag 0, marker -1
+-699336031, flag 0, marker -1
+-675341080, flag 0, marker -1
+-643755575, flag 0, marker -1
+-628262955, flag 0, marker -1
+-408978806, flag 0, marker -1
+-263463402, flag 0, marker -1
+100529881, flag 0, marker -1
+207459409, flag 0, marker -1
+469263763, flag 0, marker -1
+731530647, flag 0, marker -1
+733758623, flag 0, marker -1
+801547394, flag 0, marker -1
+837270088, flag 0, marker -1
+977103460, flag 0, marker -1
+1336019547, flag 0, marker -1
+1392380053, flag 0, marker -1
+1409507675, flag 0, marker -1
+1471007317, flag 0, marker -1
+1523249696, flag 0, marker -1
+1695494009, flag 0, marker -1
+1776993842, flag 0, marker -1
+1895990783, flag 0, marker -1
+
+437
+448
+459
+470
+Node: 0x560e1cf99050 (731530647)
+485
+Node: 0x560e1cf99050 (731530647)
+Line 499 - flagged_nodes size: 0
+501
+Node: 0x560e1cf99050 (731530647)
+534
+545
+Line 551 - flagged_nodes size: 0
+Line 553 - flagged_nodes size: 0
+---------------Printing tree---------------
+-1744368933, flag 0, marker -1
+-1426561410, flag 0, marker -1
+-1388083945, flag 0, marker -1
+-1323832112, flag 0, marker -1
+-1250757343, flag 0, marker -1
+-941487675, flag 0, marker -1
+-895085755, flag 0, marker -1
+-892353087, flag 0, marker -1
+-767997417, flag 0, marker -1
+-699336031, flag 0, marker -1
+-675341080, flag 0, marker -1
+-643755575, flag 0, marker -1
+-628262955, flag 0, marker -1
+-408978806, flag 0, marker -1
+-263463402, flag 0, marker -1
+100529881, flag 0, marker -1
+207459409, flag 0, marker -1
+469263763, flag 0, marker -1
+733758623, flag 0, marker -1
+801547394, flag 0, marker -1
+837270088, flag 0, marker -1
+977103460, flag 0, marker -1
+1336019547, flag 0, marker -1
+1392380053, flag 0, marker -1
+1409507675, flag 0, marker -1
+1471007317, flag 0, marker -1
+1523249696, flag 0, marker -1
+1695494009, flag 0, marker -1
+1776993842, flag 0, marker -1
+1895990783, flag 0, marker -1
+
+437
+448
+459
+470
+Node: 0x560e1cf98f60 (-1426561410)
+485
+Node: 0x560e1cf98f60 (-1426561410)
+Line 499 - flagged_nodes size: 0
+501
+Node: 0x560e1cf98f60 (-1426561410)
+534
+545
+Line 551 - flagged_nodes size: 0
+Line 553 - flagged_nodes size: 0
+---------------Printing tree---------------
+-1744368933, flag 0, marker -1
+-1388083945, flag 0, marker -1
+-1323832112, flag 0, marker -1
+-1250757343, flag 0, marker -1
+-941487675, flag 0, marker -1
+-895085755, flag 0, marker -1
+-892353087, flag 0, marker -1
+-767997417, flag 0, marker -1
+-699336031, flag 0, marker -1
+-675341080, flag 0, marker -1
+-643755575, flag 0, marker -1
+-628262955, flag 0, marker -1
+-408978806, flag 0, marker -1
+-263463402, flag 0, marker -1
+100529881, flag 0, marker -1
+207459409, flag 0, marker -1
+469263763, flag 0, marker -1
+733758623, flag 0, marker -1
+801547394, flag 0, marker -1
+837270088, flag 0, marker -1
+977103460, flag 0, marker -1
+1336019547, flag 0, marker -1
+1392380053, flag 0, marker -1
+1409507675, flag 0, marker -1
+1471007317, flag 0, marker -1
+1523249696, flag 0, marker -1
+1695494009, flag 0, marker -1
+1776993842, flag 0, marker -1
+1895990783, flag 0, marker -1
+
+437
+448
+459
+470
+Node: 0x560e1cf98ea0 (-263463402)
+485
+Node: 0x560e1cf98ea0 (-263463402)
+Line 499 - flagged_nodes size: 0
+501
+Node: 0x560e1cf98ea0 (-263463402)
+Node pushed
+Node pushed
+Node pushed
+Node pushed
+Node pushed
+Line 510 - flagged_nodes size: 5
+Node: 0x560e1cf98ea0 (-263463402)
+Line 528 - flagged_nodes size: 5
+Line 530 - flagged_nodes size: 5
+---------------Printing tree---------------
+-1744368933, flag 0, marker -1
+-1388083945, flag 0, marker -1
+-1323832112, flag 0, marker -1
+-1250757343, flag 0, marker -1
+-941487675, flag 0, marker -1
+-895085755, flag 0, marker -1
+-892353087, flag 0, marker -1
+-767997417, flag 0, marker -1
+-699336031, flag 0, marker -1
+-675341080, flag 0, marker -1
+-643755575, flag 0, marker -1
+-628262955, flag 0, marker 0
+-40897880Input file: inputs/bulk_delete.txt
+---------------Printing tree---------------
+-1744368933, flag 0, marker -1
+-1426561410, flag 0, marker -1
+-1388083945, flag 0, marker -1
+-1323832112, flag 0, marker -1
+-1250757343, flag 0, marker -1
+-941487675, flag 0, marker -1
+-895085755, flag 0, marker -1
+-892353087, flag 0, marker -1
+-767997417, flag 0, marker -1
+-699336031, flag 0, marker -1
+-675341080, flag 0, marker -1
+-643755575, flag 0, marker -1
+-628262955, flag 0, marker -1
+-408978806, flag 0, marker -1
+-263463402, flag 0, marker -1
+100529881, flag 0, marker -1
+207459409, flag 0, marker -1
+469263763, flag 0, marker -1
+731530647, flag 0, marker -1
+733758623, flag 0, marker -1
+801547394, flag 0, marker -1
+837270088, flag 0, marker -1
+977103460, flag 0, marker -1
+1336019547, flag 0, marker -1
+1392380053, flag 0, marker -1
+1409507675, flag 0, marker -1
+1471007317, flag 0, marker -1
+1523249696, flag 0, marker -1
+1695494009, flag 0, marker -1
+1776993842, flag 0, marker -1
+1895990783, flag 0, marker -1
+
+437
+448
+459
+470
+Node: 0x559432527050 (731530647)
+485
+Node: 0x559432527050 (731530647)
+Line 499 - flagged_nodes size: 0
+501
+Node: 0x559432527050 (731530647)
+534
+545
+Line 551 - flagged_nodes size: 0
+Line 553 - flagged_nodes size: 0
+---------------Printing tree---------------
+-1744368933, flag 0, marker -1
+-1426561410, flag 0, marker -1
+-1388083945, flag 0, marker -1
+-1323832112, flag 0, marker -1
+-1250757343, flag 0, marker -1
+-941487675, flag 0, marker -1
+-895085755, flag 0, marker -1
+-892353087, flag 0, marker -1
+-767997417, flag 0, marker -1
+-699336031, flag 0, marker -1
+-675341080, flag 0, marker -1
+-643755575, flag 0, marker -1
+-628262955, flag 0, marker -1
+-408978806, flag 0, marker -1
+-263463402, flag 0, marker -1
+100529881, flag 0, marker -1
+207459409, flag 0, marker -1
+469263763, flag 0, marker -1
+733758623, flag 0, marker -1
+801547394, flag 0, marker -1
+837270088, flag 0, marker -1
+977103460, flag 0, marker -1
+1336019547, flag 0, marker -1
+1392380053, flag 0, marker -1
+1409507675, flag 0, marker -1
+1471007317, flag 0, marker -1
+1523249696, flag 0, marker -1
+1695494009, flag 0, marker -1
+1776993842, flag 0, marker -1
+1895990783, flag 0, marker -1
+
+437
+448
+459
+470
+Node: 0x559432526f60 (-1426561410)
+485
+Node: 0x559432526f60 (-1426561410)
+Line 499 - flagged_nodes size: 0
+501
+Node: 0x559432526f60 (-1426561410)
+534
+545
+Line 551 - flagged_nodes size: 0
+Line 553 - flagged_nodes size: 0
+---------------Printing tree---------------
+-1744368933, flag 0, marker -1
+-1388083945, flag 0, marker -1
+-1323832112, flag 0, marker -1
+-1250757343, flag 0, marker -1
+-941487675, flag 0, marker -1
+-895085755, flag 0, marker -1
+-892353087, flag 0, marker -1
+-767997417, flag 0, marker -1
+-699336031, flag 0, marker -1
+-675341080, flag 0, marker -1
+-643755575, flag 0, marker -1
+-628262955, flag 0, marker -1
+-408978806, flag 0, marker -1
+-263463402, flag 0, marker -1
+100529881, flag 0, marker -1
+207459409, flag 0, marker -1
+469263763, flag 0, marker -1
+733758623, flag 0, marker -1
+801547394, flag 0, marker -1
+837270088, flag 0, marker -1
+977103460, flag 0, marker -1
+1336019547, flag 0, marker -1
+1392380053, flag 0, marker -1
+1409507675, flag 0, marker -1
+1471007317, flag 0, marker -1
+1523249696, flag 0, marker -1
+1695494009, flag 0, marker -1
+1776993842, flag 0, marker -1
+1895990783, flag 0, marker -1
+
+437
+448
+459
+470
+Node: 0x559432526ea0 (-263463402)
+485
+Node: 0x559432526ea0 (-263463402)
+Line 499 - flagged_nodes size: 0
+501
+Node: 0x559432526ea0 (-263463402)
+Node pushed
+Node pushed
+Node pushed
+Node pushed
+Node pushed
+Line 510 - flagged_nodes size: 5
+Node: 0x559432526ea0 (-263463402)
+Line 528 - flagged_nodes size: 5
+Line 530 - flagged_nodes size: 5
+---------------Printing tree---------------
+-1744368933, flag 0, marker -1
+-1388083945, flag 0, marker -1
+-1323832112, flag 0, marker -1
+-1250757343, flag 0, marker -1
+-941487675, flag 0, marker -1
+-895085755, flag 0, marker -1
+-892353087, flag 0, marker -1
+-767997417, flag 0, marker -1
+-699336031, flag 0, marker -1
+-675341080, flag 0, marker -1
+-643755575, flag 0, marker -1
+-628262955, flag 0, marker 0
+-40897880Input file: inputs/bulk_delete.txt
+---------------Printing tree---------------
+-1744368933, flag 0, marker -1
+-1426561410, flag 0, marker -1
+-1388083945, flag 0, marker -1
+-1323832112, flag 0, marker -1
+-1250757343, flag 0, marker -1
+-941487675, flag 0, marker -1
+-895085755, flag 0, marker -1
+-892353087, flag 0, marker -1
+-767997417, flag 0, marker -1
+-699336031, flag 0, marker -1
+-675341080, flag 0, marker -1
+-643755575, flag 0, marker -1
+-628262955, flag 0, marker -1
+-408978806, flag 0, marker -1
+-263463402, flag 0, marker -1
+100529881, flag 0, marker -1
+207459409, flag 0, marker -1
+469263763, flag 0, marker -1
+731530647, flag 0, marker -1
+733758623, flag 0, marker -1
+801547394, flag 0, marker -1
+837270088, flag 0, marker -1
+977103460, flag 0, marker -1
+1336019547, flag 0, marker -1
+1392380053, flag 0, marker -1
+1409507675, flag 0, marker -1
+1471007317, flag 0, marker -1
+1523249696, flag 0, marker -1
+1695494009, flag 0, marker -1
+1776993842, flag 0, marker -1
+1895990783, flag 0, marker -1
+
+437
+448
+459
+470
+Node: 0x5599b2b2b050 (731530647)
+485
+Node: 0x5599b2b2b050 (731530647)
+Line 499 - flagged_nodes size: 0
+501
+Node: 0x5599b2b2b050 (731530647)
+534
+545
+Line 551 - flagged_nodes size: 0
+Line 553 - flagged_nodes size: 0
+---------------Printing tree---------------
+-1744368933, flag 0, marker -1
+-1426561410, flag 0, marker -1
+-1388083945, flag 0, marker -1
+-1323832112, flag 0, marker -1
+-1250757343, flag 0, marker -1
+-941487675, flag 0, marker -1
+-895085755, flag 0, marker -1
+-892353087, flag 0, marker -1
+-767997417, flag 0, marker -1
+-699336031, flag 0, marker -1
+-675341080, flag 0, marker -1
+-643755575, flag 0, marker -1
+-628262955, flag 0, marker -1
+-408978806, flag 0, marker -1
+-263463402, flag 0, marker -1
+100529881, flag 0, marker -1
+207459409, flag 0, marker -1
+469263763, flag 0, marker -1
+733758623, flag 0, marker -1
+801547394, flag 0, marker -1
+837270088, flag 0, marker -1
+977103460, flag 0, marker -1
+1336019547, flag 0, marker -1
+1392380053, flag 0, marker -1
+1409507675, flag 0, marker -1
+1471007317, flag 0, marker -1
+1523249696, flag 0, marker -1
+1695494009, flag 0, marker -1
+1776993842, flag 0, marker -1
+1895990783, flag 0, marker -1
+
+437
+448
+459
+470
+Node: 0x5599b2b2af60 (-1426561410)
+485
+Node: 0x5599b2b2af60 (-1426561410)
+Line 499 - flagged_nodes size: 0
+501
+Node: 0x5599b2b2af60 (-1426561410)
+534
+545
+Line 551 - flagged_nodes size: 0
+Line 553 - flagged_nodes size: 0
+---------------Printing tree---------------
+-1744368933, flag 0, marker -1
+-1388083945, flag 0, marker -1
+-1323832112, flag 0, marker -1
+-1250757343, flag 0, marker -1
+-941487675, flag 0, marker -1
+-895085755, flag 0, marker -1
+-892353087, flag 0, marker -1
+-767997417, flag 0, marker -1
+-699336031, flag 0, marker -1
+-675341080, flag 0, marker -1
+-643755575, flag 0, marker -1
+-628262955, flag 0, marker -1
+-408978806, flag 0, marker -1
+-263463402, flag 0, marker -1
+100529881, flag 0, marker -1
+207459409, flag 0, marker -1
+469263763, flag 0, marker -1
+733758623, flag 0, marker -1
+801547394, flag 0, marker -1
+837270088, flag 0, marker -1
+977103460, flag 0, marker -1
+1336019547, flag 0, marker -1
+1392380053, flag 0, marker -1
+1409507675, flag 0, marker -1
+1471007317, flag 0, marker -1
+1523249696, flag 0, marker -1
+1695494009, flag 0, marker -1
+1776993842, flag 0, marker -1
+1895990783, flag 0, marker -1
+
+437
+448
+459
+470
+Node: 0x5599b2b2aea0 (-263463402)
+485
+Node: 0x5599b2b2aea0 (-263463402)
+Line 499 - flagged_nodes size: 0
+501
+Node: 0x5599b2b2aea0 (-263463402)
+Node pushed
+Node pushed
+Node pushed
+Node pushed
+Node pushed
+Line 510 - flagged_nodes size: 5
+Node: 0x5599b2b2aea0 (-263463402)
+Line 528 - flagged_nodes size: 5
+Line 530 - flagged_nodes size: 5
+---------------Printing tree---------------
+-1744368933, flag 0, marker -1
+-1388083945, flag 0, marker -1
+-1323832112, flag 0, marker -1
+-1250757343, flag 0, marker -1
+-941487675, flag 0, marker -1
+-895085755, flag 0, marker -1
+-892353087, flag 0, marker -1
+-767997417, flag 0, marker -1
+-699336031, flag 0, marker -1
+-675341080, flag 0, marker -1
+-643755575, flag 0, marker -1
+-628262955, flag 0, marker 0
+-40897880
