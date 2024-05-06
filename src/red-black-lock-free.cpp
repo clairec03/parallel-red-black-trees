@@ -2,44 +2,31 @@
 #include <stdio.h>
 #include <sched.h>
 #include <omp.h>
-#include<unistd.h>
 
+// The following code was inspired and partially sourced from: 
+// https://github.com/zhangshun97/Lock-free-Red-black-tree/
 
 using namespace std;
-
-/* Invariants of the lock-free implementation */
-// 1. `flag` field for each node indicates whether the node is being modified
-//    Setting the flag field protects the local area around the node for insertion
-//    including the node itself, its parent, uncle, and grandparent by checking flags
-// 2. Intention markers ensure a safe distance between any two processes s.t.
-//    each process is guaranteed to be able to act. An intention marker is an integer field
-//    in each node that is set by a process to indicate that the process intends to 
-//    move its local area up to that node. To set a marker, a thread places its thread ID 
-//    in the marker field of the node (omp_get_thread_num();). After the work in the local area
-//    is done, the thread resets its own markers and flags.
-
-/* Rotations cause the marker locations to change */
-// 1. For the insertion case, simply remove markers when done
-// 2. For the deletion case, the markers must be moved
 
 inline TreeNode newTreeNode(int val, bool red, TreeNode parent, 
                             TreeNode left, TreeNode right) {
   TreeNode node = new struct RedBlackNode();
-  node->flag = true; // To prevent anyone else from touching while I init
+  // Initially Set Flag to Prevent Access during creation
+  node->flag = true; 
   node->child[0] = left;
   node->child[1] = right;
   node->parent = parent;
   node->val = val;
-  node->marker = DEFAULT_MARKER; // Initialized to DEFAULT_MARKER
+  node->marker = DEFAULT_MARKER; 
   node->red = red;
   node->flag = false;
   return node;
 }
 
+// Executes Rotation of the subtree of tree at root in direction dir
 TreeNode rotateDir(Tree &tree, TreeNode &root, int dir) {
-  // printf("BEGIN ROTATION\n");
+  // If the tree's root is part of rotation, flag tree->root
   if (tree->root == root) {
-    // Check for livelock
     bool expected = false;
     while (!tree->root_flag.compare_exchange_weak(expected, true)) {
       expected = false;
@@ -47,10 +34,10 @@ TreeNode rotateDir(Tree &tree, TreeNode &root, int dir) {
   }
 
   TreeNode parent = root->parent;
-  // If root involved in rotation, flag the tree root
   TreeNode rotatingChild = root->child[1-dir];
   // assert(rotatingChild);
   TreeNode C = rotatingChild->child[dir];
+
   root->child[1-dir] = C;
   if (C) {
     C->parent = root;
@@ -64,39 +51,37 @@ TreeNode rotateDir(Tree &tree, TreeNode &root, int dir) {
   } else {
     tree->root = rotatingChild;
   }
-  // If root involved in rotation, flag the tree root
+  // If root involved in rotation, unflag the tree root
   if (tree->root == rotatingChild) {
     tree->root_flag = false;
   }
-  // printf("END ROTATION\n");
   return rotatingChild;
 }
 
+// Initializes an empty tree
 Tree tree_init() {
   Tree tree = new struct RedBlackTree();
   tree->root = nullptr;
   return tree;
 }
 
-
-
-string subtreeToString(TreeNode root) {
+// Create a string representatino of a subtree
+// Of the form str = Empty | RED(str, x, str) | BLACK(str, x, str)
+string subtree_to_string(TreeNode root) {
   if (!root) {
     return "Empty";
   }
   if (root->red) 
-    return "RED(" + subtreeToString(root->child[0]) + ", " + to_string(root->val) + ", " + subtreeToString(root->child[1]) + ")";
+    return "RED(" + subtree_to_string(root->child[0]) + ", " + to_string(root->val) + ", " 
+                  + subtree_to_string(root->child[1]) + ")";
   else 
-    return "BLACK(" + subtreeToString(root->child[0]) + ", " + to_string(root->val) + ", " + subtreeToString(root->child[1]) + ")";
+    return "BLACK(" + subtree_to_string(root->child[0]) + ", " + to_string(root->val) + ", " 
+                    + subtree_to_string(root->child[1]) + ")";
 }
 
+// Create a String representation of a Tree
 string tree_to_string(Tree T) {
-  return subtreeToString(T->root);
-}
-
-int size_subtree(TreeNode &root) {
-  if (!root) return 0;
-  return 1 + size_subtree(root->child[0]) + size_subtree(root->child[1]);
+  return subtree_to_string(T->root);
 }
 
 void inord_tree_to_vec_helper(TreeNode T, vector <int> &res) {
@@ -106,6 +91,7 @@ void inord_tree_to_vec_helper(TreeNode T, vector <int> &res) {
   inord_tree_to_vec_helper(T->child[1], res);
 }
 
+// With function above, returns an in-order vector of all elements of the tree
 vector <int> tree_to_vector(Tree &T) {
   TreeNode root = T->root;
   vector <int> res;
@@ -116,8 +102,15 @@ vector <int> tree_to_vector(Tree &T) {
   return res;
 }
 
+// Returns the size of a subtree rooted at root
+int subtree_size(TreeNode &root) {
+  if (!root) return 0;
+  return 1 + subtree_size(root->child[0]) + subtree_size(root->child[1]);
+}
+
+// Returns the size of the tree overall
 int tree_size(Tree &tree) {
-  return size_subtree(tree->root);
+  return subtree_size(tree->root);
 }
 
 // Return Whether Red-Black Tree Rooted at root is valid
@@ -164,6 +157,7 @@ bool validateAtBlackDepth(TreeNode &root, int *blackDepth, int *lo, int *hi) {
     return false;
   }
   
+  // Update blackdepth if necessary
   *blackDepth = leftDepth + !(root->red);
   return true;
 }
@@ -196,7 +190,6 @@ bool tree_lookup(Tree &tree, int val) {
     }
     old_node->flag = false;
     if (!node->flag.compare_exchange_weak(expected, true)) {
-      // TODO for extension goal - Backoff???
       return tree_lookup(tree, val);
     }
   }
@@ -204,9 +197,8 @@ bool tree_lookup(Tree &tree, int val) {
   return false;
 }
 
-// Inserts Node into Tree, returns True if Node Inserted (i.e. wasn't already present)
+// Inserts Node into Tree, returns true if val wasn't already present in the tree
 bool tree_insert(Tree &tree, int val) {
-  // printf("Thread %d called insert on val %d\n", omp_get_thread_num(), val);
   vector<TreeNode> flagged_nodes;
 
   // First, get tree root access
@@ -218,7 +210,6 @@ bool tree_insert(Tree &tree, int val) {
   if (!tree->root) {
     tree->root = newTreeNode(val, true, nullptr, nullptr, nullptr);
     tree->root_flag = false;
-    printf("Thread %d, created root val: %d\n", omp_get_thread_num(), tree->root->val);
     return true;
   }
   tree->root_flag = false;
@@ -226,11 +217,9 @@ bool tree_insert(Tree &tree, int val) {
   // Search down hand-over-hand to find where node would be
   TreeNode iter = tree->root;
   if (!iter->flag.compare_exchange_weak(expected, true)) {
-    // printf("[WARN] Local Not Acquired for thread %d, val: %d\n", omp_get_thread_num(), iter->val);
     return tree_insert(tree, val);
   }
-  // Finally removing root access
-  // printf("Local Acquired for thread %d, val: %d\n", omp_get_thread_num(), iter->val);
+
   TreeNode parent = nullptr;
 
   while (iter) {
@@ -243,23 +232,18 @@ bool tree_insert(Tree &tree, int val) {
       // Node not in the tree, search down and get new flag
       iter = iter->child[(val > iter->val)];
       if (iter && !iter->flag.compare_exchange_weak(expected, true)) {
-        // printf("[WARN] Local Not Acquired for thread %d, val: %d\n", omp_get_thread_num(), iter->val);
         parent->flag = false;
-        // printf("Local Relinquished for thread %d, val: %d\n", omp_get_thread_num(), parent->val);
         return tree_insert(tree, val);
       }
-      // if (iter) printf("Local Acquired for thread %d, val: %d\n", omp_get_thread_num(), iter->val);
       if (iter) {
         parent->flag = false;
-        // printf("Local Relinquished for thread %d, val: %d\n", omp_get_thread_num(), parent->val);
       }
     }
   }
 
   // Place Node Where it Would be in the Tree Assuming No Rebalancing
   TreeNode node = newTreeNode(val, true, parent, nullptr, nullptr);
-  node->flag = true; // Does NOT need to be compare and swapped because parent already locked down
-  // printf("Local Acquired for thread %d, val: %d\n", omp_get_thread_num(), node->val);
+  node->flag = true;
   if (!setup_local_area_insert(node, flagged_nodes)) {
     return tree_insert(tree, val);
   }
@@ -274,7 +258,6 @@ bool tree_insert(Tree &tree, int val) {
   TreeNode uncle;
   int dir;
   while (node->parent) {
-    // printf("HERE! %d\n", omp_get_thread_num());
     // If Parent is Black, Chilling (I1)
     if (!parent->red) {
       clear_local_area_insert(node, flagged_nodes);
@@ -291,30 +274,26 @@ bool tree_insert(Tree &tree, int val) {
     dir = parent->val > grandparent->val;
     uncle = grandparent->child[1-dir];
     if (!uncle || !uncle->red) {
-      // (I5 & I6)
+      // If node is an inner child, rotate out to be an outer child (I5)
       if (node == parent->child[1-dir]) {
         rotateDir(tree, parent, dir);
         node = parent;
         parent = grandparent->child[dir];
       }
+      // Now node is an outer child, rotate at grandparent (I6)
       rotateDir(tree, grandparent, 1-dir);
       parent->red = false;
       grandparent->red = true;
-      // A little bit suspicious about this but idk
-      // Like should local area change when we do rotations?
-      // Since we're not storing as vectors, so flags will no longer be at same areas
       clear_local_area_insert(node, flagged_nodes);
       return true;
     }
-    // Case parent and uncle are both red nodes
-
     // Parent and Uncle Both Red, Swap Parent + Grandparent Colors (I2)
     parent->red = false;
     uncle->red = false;
     grandparent->red = true;
 
     // Move local area up to the grandparent
-    move_local_area_up_insert(node, flagged_nodes); // TODO: Correctness check
+    move_local_area_up_insert(node, flagged_nodes); 
     node = grandparent;
     parent = node->parent;
   }
@@ -328,18 +307,21 @@ void tree_insert_bulk(Tree &tree, vector<int> values, int batch_size, int num_th
   int num_operations = values.size();
 
   int threads_needed = min(num_operations, num_threads);
-  printf("%lu\n", values.size());
   #pragma omp parallel for schedule(dynamic, batch_size) num_threads(threads_needed)
   for (int i = 0; i < num_operations; i++) {
-    // printf("Thread %d inserting %d\n", omp_get_thread_num(), values[i]);
     tree_insert(tree, values[i]);
   }
   return;
 }
 
+/******************************************************************************/
+/*   NOTE: While we were unable to create a working implementation of delete, */
+/*   We wanted to include the code in our submission (including references to */
+/*   markers) below to show the work we put in for it                         */
+/******************************************************************************/
+
 // HELPER FUNCTIONS FOR DELETE (As per Wikipedia)
 bool delete_case_6(Tree &tree, TreeNode parent, TreeNode sibling, TreeNode distant_nephew, int dir, vector<TreeNode> &flagged_nodes) {
-  printf("delete_case_6\n");  
   // Fix up case 4 - do nothing
   rotateDir(tree, parent, dir);
   sibling->red = parent->red;
@@ -352,7 +334,6 @@ bool delete_case_6(Tree &tree, TreeNode parent, TreeNode sibling, TreeNode dista
 bool delete_case_5(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling, 
                    TreeNode close_nephew, TreeNode distant_nephew, int dir,
                    vector<TreeNode> &flagged_nodes) {
-  printf("delete_case_5\n");  
   // Close nephew is red, distant nephew is black (possibly leaf node)
   close_nephew->red = false;
   sibling->red = true;
@@ -386,26 +367,19 @@ bool delete_case_5(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling,
 }
 
 bool delete_case_4(TreeNode &node, TreeNode &sibling, TreeNode &parent, vector<TreeNode> &flagged_nodes) {
-  printf("delete_case_4\n");  
-  printf("args: %p, %p, %p, %p\n", node, sibling, parent, sibling->child[0]);
   // Fix up case 2 - both nephews are black
   sibling->red = true;
-  printf("%d\n", __LINE__);
   parent->red = false;
-  printf("%d\n", __LINE__);
 
   move_local_area_up_delete(node, flagged_nodes); 
-  printf("%d\n", __LINE__);
 
   clear_local_area_delete(parent, flagged_nodes);
-  printf("%d\n", __LINE__);
   return true;
 }
 
 bool delete_case_3(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling, 
                    TreeNode close_nephew, TreeNode distant_nephew, int dir,
                    vector<TreeNode> &flagged_nodes) {
-  printf("delete_case_3\n");  
   rotateDir(tree, parent, dir);
   parent->red = true;
   sibling->red = false;
@@ -464,7 +438,6 @@ bool delete_case_3(Tree &tree, TreeNode node, TreeNode parent, TreeNode sibling,
 }
 
 bool tree_delete(Tree &tree, int val) {
-  printf("%d\n", __LINE__);
   // Don't delete from an empty tree
   if (!tree->root) {
     return false;
@@ -475,8 +448,6 @@ bool tree_delete(Tree &tree, int val) {
   TreeNode iter = tree->root;
   TreeNode parent = tree->root->parent;
 
-  printf("%d\n", __LINE__);
-
   while (iter) {
     if (val == iter->val) {
       break;
@@ -486,8 +457,6 @@ bool tree_delete(Tree &tree, int val) {
       iter = iter->child[(val > iter->val)];
     }
   }
-  printf("%d\n", __LINE__);
-
   // If we never found the node to delete, don't delete it
   node = iter;
   if (!node) {
@@ -497,8 +466,6 @@ bool tree_delete(Tree &tree, int val) {
 
   // Default case: if no in-order successor in node's right child, set start to node itself
   TreeNode start = dn; 
-  printf("%d\n", __LINE__);
-
   // Two Node Case
   if (node->child[0] && node->child[1]) {
     // Find in-order successor of Node
@@ -511,19 +478,14 @@ bool tree_delete(Tree &tree, int val) {
     start = iter; // Actually set the successor, since one exists 
     parent = node->parent;
   }
-  printf("%d\n", __LINE__);
-  // // printf("Node: %p (%d)\n", node, node->val);
-
   if (!start) {
     node->flag = false;
     return tree_delete(tree, val);
   }
 
   vector<TreeNode> flagged_nodes;
-  printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
 
   if (!setup_local_area_delete(start, dn, flagged_nodes)) {
-    printf("setup_local_area_delete failed\n");
     start->flag = false;
     if (start != dn) {
       dn->flag = false;
@@ -531,30 +493,18 @@ bool tree_delete(Tree &tree, int val) {
     return tree_delete(tree, val);
   }
 
-  printf("%d\n", __LINE__);
-
   // Replace the value of the node to be deleted with the value of its in-order successor
   if (start != dn) {
     dn->val = start->val;
   }
-  printf("%d\n", __LINE__);
 
   // Get start's only child (note that the `start` could be `dn` if a successor doesn't exist)
   TreeNode left_child = start->child[0];
   TreeNode right_child = start->child[1];
   TreeNode child = left_child ? left_child : right_child;
 
-  printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
-
-  printf("%d\n", __LINE__);
-  // // printf("Node: %p (%d)\n", node, node->val);
-
   // One Node Case
   if (child) {
-    printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
-  // printf("Node: %p (%d)\n", node, node->val);
-
-  
     // Replace Node with its extant child
     if (parent) {
       // Node had parent, set parent's child
@@ -569,16 +519,11 @@ bool tree_delete(Tree &tree, int val) {
 
     child->red = false;
     delete node;
-    printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
     clear_local_area_delete(child, flagged_nodes);
-    printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
-    
     return true;
   }
   // Unlink the `start` node from the tree 
   // Get `rn` (replacement node) - child of `start` which will replace succ
-
-  printf("%d\n", __LINE__);
 
   // Node has no children
   // If Node is the root, just delete it
@@ -589,18 +534,13 @@ bool tree_delete(Tree &tree, int val) {
     return true;
   }
 
-  printf("%d\n", __LINE__);
-
   // If Node is red, just delete it
   if (node->red) {
     parent->child[parent->child[1] == node] = nullptr;
     delete node;
-    printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
     clear_local_area_delete(parent, flagged_nodes);
-    printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
     return true;
   }
-  printf("%d\n", __LINE__);
 
   // Node is childless and black (Delete Node and Rebalance)
   int dir = (parent->child[1] == node);
@@ -609,14 +549,10 @@ bool tree_delete(Tree &tree, int val) {
   node = nullptr;
   delete tmp;
 
-  printf("%d\n", __LINE__);
-  // printf("Node: %p (%d)\n", node, node->val);
-
   // Fix up by rebalancing the tree
   // Proprogate the deletion up the tree until reaching root
 
   TreeNode sibling, close_nephew, distant_nephew;
-  printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
   while (node != tree->root) {
     dir = parent->child[1] == node;
     sibling = parent->child[1-dir];
@@ -624,40 +560,30 @@ bool tree_delete(Tree &tree, int val) {
     close_nephew = sibling->child[dir];
     
     // In cases D3, D6, D5, D4, the node is black
-    printf("%d\n", __LINE__);
-    // // printf("Node: %p (%d)\n", node, node->val);
 
     if (sibling->red) { // Fixup cases 1 (red sibling) & 2 (sibling's children are black)
       // Case D3
-      printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
       // Do fix up at child (= start->only_child)
       return delete_case_3(tree, child, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
     } else if (distant_nephew && distant_nephew->red) {
       // Case D6 - terminal case - NO fixup needed
-      printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
       return delete_case_6(tree, parent, sibling, distant_nephew, dir, flagged_nodes);
     } else if (close_nephew && close_nephew->red) {
       // Case D5
-      printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
       // Do fix up at child (= start->child)
       return delete_case_5(tree, child, parent, sibling, close_nephew, distant_nephew, dir, flagged_nodes);
     } else if (parent->red) {
       // Case D4
       // print_tree(tree->root);
-      printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
       return delete_case_4(child, sibling, parent, flagged_nodes);
     }
-    printf("%d\n", __LINE__);
     // Else case - node is red
     sibling->red = true;
     node = parent;
     parent = node->parent;
-    printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
     clear_local_area_delete(node, flagged_nodes);
-    printf("Line %d - flagged_nodes size: %ld\n", __LINE__, flagged_nodes.size());
-    printf("%d\n", __LINE__);
   }
-  printf("%d\n", __LINE__);
+
 
   return true;
 }

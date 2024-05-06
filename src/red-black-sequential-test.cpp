@@ -9,6 +9,19 @@
 
 using namespace std;
 
+string operation_to_string(Operation operation) {
+  switch(operation.type){
+    case INSERT:
+      return "INSERT " + operation.val;
+    case DELETE:
+      return "DELETE " + operation.val;
+    case LOOKUP:
+      return "LOOKUP " + operation.val;
+    default:
+      return "(INVALID)";
+  }
+}
+
 vector<int> generate_rand_input(int length = 1000) {
   vector<int> res;
   set<int> seen; 
@@ -27,61 +40,13 @@ vector<int> generate_rand_input(int length = 1000) {
   return res;
 }
 
-int run_tests() {
-  Tree tree = tree_init();
-  int num_nodes = 10000;
-  vector<int> tree_elems = generate_rand_input(num_nodes);
-
-  for (int i = 0; i < num_nodes; i++) {
-    tree_insert(tree, tree_elems[i]);
-    if (!tree_validate(tree)) {
-      return 1;
-    }
-    if (tree_size(tree) != i+1) {
-      return 1;
-    }
-  }
-
-  vector<int> vec_repr = tree_to_vector(tree);
-
-  if (vec_repr.size() != tree_elems.size()) {
-    printf("SIZE MISMATCH!\n");
-    return 1;
-  }
-  for (int i = 1; i < num_nodes; i++) {
-    if (vec_repr[i-1] >= vec_repr[i]) {
-      printf("ELEMENT %d NOT IN ORDER!\n", i+1);
-      return 1;
-    }
-  }
-  
-  for (int i = 0; i < num_nodes; i++) {
-    tree_delete(tree, tree_elems[i]);
-    if (!tree_validate(tree)) {
-      printf("FAILED AT i = %d!\n", i);
-      return 1;
-    }
-    if (tree_size(tree) != num_nodes-i-1) {
-      printf("ELEMENT %d NOT ACTUALLY DELETED!\n", i);
-      return 1;
-    }
-  }
-
-  printf("SUCCEEDED!\n");
-  return 0;
-}
-
 int main(int argc, char *argv[]) {
   // Command Line Input Code (adapted from Assn 3)
-  string input_filename;
   int opt;
   bool insert_test = false, mixed_test = false;
-  int num_operations;
-  while ((opt = getopt(argc, argv, "f:i:d:m:")) != -1) {
+  int num_operations = 0;
+  while ((opt = getopt(argc, argv, "i:m:")) != -1) {
     switch (opt) {
-      case 'f':
-        input_filename = optarg;
-        break;
       case 'i':
         insert_test = true;
         num_operations = atoi(optarg);
@@ -91,45 +56,18 @@ int main(int argc, char *argv[]) {
         num_operations = atoi(optarg);
         break;
       default:
-        fprintf(stderr, "Usage: %s -f input_filename \n", argv[0]);
+        fprintf(stderr, "Usage: %s -i / -m \n", argv[0]);
         exit(EXIT_FAILURE);
     }
   }
-  // Should only specify one of f, i, m
-  if (!empty(input_filename) + insert_test + mixed_test != 1) {
-    fprintf(stderr, "Usage: %s [-f input_filename] \n", argv[0]);
+  // Should only specify one of i, m
+  if (insert_test + mixed_test != 1) {
+    fprintf(stderr, "Usage: %s -i / -m \n", argv[0]);
     exit(EXIT_FAILURE);
   }
 
   vector<Operation_t> operations;
-  if (!empty(input_filename)) {
-    // Attempt to open and read file
-    cout << "Input file: " << input_filename << '\n';
-    ifstream fin(input_filename);
-
-    if (!fin) {
-      cerr << "Unable to open file: " << input_filename << ".\n";
-      exit(EXIT_FAILURE);
-    }
-
-    fin >> num_operations;
-    operations.resize(num_operations);
-    int val;
-    string type;
-    for (auto& operation : operations) {
-      fin >> type >> operation.val;
-      if (!type.compare("INSERT")) {
-        operation.type = INSERT;
-      } else if (!type.compare("LOOKUP")) {
-        operation.type = LOOKUP;
-      } else if (!type.compare("DELETE")) {
-        operation.type = DELETE;
-      } else {
-        cerr << "Malformed operation \"" << type << "\" in input file: " << input_filename << ".\n";
-        exit(EXIT_FAILURE);
-      }
-    }
-  } else if (insert_test) {
+  if (insert_test) {
     operations.resize(num_operations);
     for (auto& operation : operations) {
       operation.type = INSERT;
@@ -169,7 +107,6 @@ int main(int argc, char *argv[]) {
   int expected_size = 0;
   Tree tree = tree_init();
   for (auto& operation : operations) {
-    printf("%d, %d\n", operation.type, operation.val);
     switch(operation.type) {
       case INSERT:
         if (tree_insert(tree, operation.val)) {

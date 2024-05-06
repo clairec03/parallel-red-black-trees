@@ -2,6 +2,9 @@
 
 using namespace std;
 
+// The following was adapted from pseudocode presented in  
+// https://en.wikipedia.org/wiki/Red%E2%80%93black_tree
+
 inline TreeNode newTreeNode(int val, bool red, TreeNode parent, 
                             TreeNode left, TreeNode right) {
   TreeNode node = new struct RedBlackNode();
@@ -93,7 +96,7 @@ bool validateAtBlackDepth(TreeNode &root, int *blackDepth, int *lo, int *hi) {
   }
 
   // Root must follow BST invariant
-  if (lo && root->val <= *lo || hi && *hi <= root->val) {
+  if ((lo && root->val <= *lo) || (hi && *hi <= root->val)) {
     printf("BST Invariant Failed at %d! \n", root->val);
     return false;
   }

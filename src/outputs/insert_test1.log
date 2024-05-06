@@ -1,0 +1,244 @@
+\n
+Running with threads = 1, batch size = 8, basic_insert_50_50_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 1
+Batch size: 8
+Computation time (sec): 0.0008453750
+Success.
+\n
+Running with threads = 2, batch size = 8, basic_insert_50_50_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 2
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 2
+Batch size: 8
+Computation time (sec): 0.0011865960
+Success.
+Computation time (sec): 0.0011906670
+Success.
+\n
+Running with threads = 4, batch size = 8, basic_insert_50_50_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 4
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 4
+Batch size: 8
+Computation time (sec): 0.0007984450
+Success.
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 4
+Batch size: 8
+Computation time (sec): 0.0008590920
+Success.
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 4
+Batch size: 8
+Computation time (sec): 0.0007477390
+Success.
+Computation time (sec): 0.0007167220
+Success.
+\n
+Running with threads = 8, batch size = 8, basic_insert_50_50_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/basic_insert_50_50.txt
+Number of threads: 8
+Batch size: 8
+\n
+Running with threads = 1, batch size = 8, medium_insert_1000_1000_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 1
+Batch size: 8
+Computation time (sec): 0.5586539040
+Success.
+\n
+Running with threads = 2, batch size = 8, medium_insert_1000_1000_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 2
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 2
+Batch size: 8
+Computation time (sec): 0.6903921980
+Success.
+Computation time (sec): 0.6924413640
+Success.
+\n
+Running with threads = 4, batch size = 8, medium_insert_1000_1000_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 4
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 4
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 4
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 4
+Batch size: 8
+\n
+Running with threads = 8, batch size = 8, medium_insert_1000_1000_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/medium_insert_1000_1000.txt
+Number of threads: 8
+Batch size: 8
+\n
+Running with threads = 1, batch size = 8, hard_insert_2500_2500_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 1
+Batch size: 8
+Computation time (sec): 5.6971716080
+Success.
+\n
+Running with threads = 2, batch size = 8, hard_insert_2500_2500_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 2
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 2
+Batch size: 8
+Computation time (sec): 6.4245635700
+Success.
+Computation time (sec): 6.4626987680
+Success.
+\n
+Running with threads = 4, batch size = 8, hard_insert_2500_2500_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 4
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 4
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 4
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 4
+Batch size: 8
+\n
+Running with threads = 8, batch size = 8, hard_insert_2500_2500_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/hard_insert_2500_2500.txt
+Number of threads: 8
+Batch size: 8
+\n
+Running with threads = 1, batch size = 8, extreme_insert_5000_5000_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 1
+Batch size: 8
+Computation time (sec): 29.1390906970
+Success.
+\n
+Running with threads = 2, batch size = 8, extreme_insert_5000_5000_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 2
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 2
+Batch size: 8
+Computation time (sec): 33.2202713680
+Success.
+Computation time (sec): 33.4060467900
+Success.
+\n
+Running with threads = 4, batch size = 8, extreme_insert_5000_5000_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 4
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 4
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 4
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 4
+Batch size: 8
+\n
+Running with threads = 8, batch size = 8, extreme_insert_5000_5000_\n
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 8
+Batch size: 8
+Input file: /afs/andrew.cmu.edu/usr16/ccz/private/15418/parallel-red-black-trees/src/inputs/extreme_insert_5000_5000.txt
+Number of threads: 8
+Batch size: 8

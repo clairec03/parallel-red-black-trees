@@ -2,17 +2,108 @@
 
 using namespace std;
 
-/* Helper functions for lock-free */
+// The following code was inspired and partially sourced from: 
+// https://github.com/zhangshun97/Lock-free-Red-black-tree/
+
+/******************************************************************************/
+/*                                 HELPER FUNCTIONS                           */
+/******************************************************************************/
+/* Clear a thread's local area of flags */
 void clear_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
-  // Release all flags in the local area
-  // First, reset all flags to false
+  // Release all flags in the local area by resetting all flags to false
   for (auto &node : flagged_nodes) {
     // No need to do null check since we know all nodes in flagged_nodes exist
     node->flag = false;
-    // printf("Local Relinquished for thread %d, val: %d\n", omp_get_thread_num(), node->val);
   }
 }
 
+// Setup a node's local area
+// Note that we have as invariant that node and p exist and are already flagged,
+// So just need to flag gp and u
+bool setup_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
+  // Note: node and p are guaranteed to exist, gp and u are not
+  TreeNode p = nullptr, gp = nullptr, u = nullptr;
+  if (node) p = node->parent;
+  if (p) gp = p->parent;
+  if (gp) u = gp->child[gp->child[1] != p];
+
+  // Set up Flags
+  bool expected = false;
+
+  // Because we (now) guarantee node and p are already flagged, immediately add to flagged nodes
+  flagged_nodes.push_back(node);
+  if (p) flagged_nodes.push_back(p);
+
+  vector<TreeNode> nodes_to_be_flagged = {gp, u};  
+  for (auto &node : nodes_to_be_flagged) {
+    if (node && (node->marker != -1 || !node->flag.compare_exchange_weak(expected, true))) {
+      // If the flag couldn't be set correctly, roll back the changes to flags and return false => return to root
+      for (auto &flagged_node : flagged_nodes) {
+        flagged_node->flag = false;
+      }
+      return false;
+    } else if (node != nullptr) {
+      flagged_nodes.push_back(node);
+    }
+  }
+
+  return true;
+}
+
+// Move Local Area Up when insert needs to go up a layer
+void move_local_area_up_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
+  // Define Parent, Grandparent, and Uncle of Original Node
+  TreeNode p = node->parent;
+  TreeNode gp = p->parent;
+  TreeNode u = gp->child[gp->child[1] != p];
+
+  // Remove flag from node, parent, and uncle
+  // By virtue of moving up to gp, we know p and gp must already exist
+  node->flag = false;
+  p->flag = false;
+  if (u) u->flag = false;
+
+  // Remove nodes from flagged_nodes
+  flagged_nodes = {gp};
+
+  // Set node to grandparent, and return if new node is the root
+  node = gp;
+  if (!node->parent) {
+    return;
+  }
+
+  // Also add flags for all except new node (who already had one as old gp)
+  bool expected = false;
+  p = node->parent;
+  gp = p->parent;
+
+  if (gp) u = gp->child[gp->child[1] != p];
+  
+  while (!p->flag.compare_exchange_weak(expected, true)) {
+    expected = false;
+  }
+  flagged_nodes.push_back(p);
+
+  if (gp) {
+    while (!gp->flag.compare_exchange_weak(expected, true)) {
+      expected = false;
+    }
+    flagged_nodes.push_back(gp);
+  }
+
+  if (u) {
+    while (u->marker != -1 && !u->flag.compare_exchange_weak(expected, true)) {
+      expected = false;
+    }
+    flagged_nodes.push_back(u);
+  }
+}
+
+/******************************************************************************/
+/*   NOTE: While we were unable to create a working implementation of delete, */
+/*   We wanted to include the code in our submission (including references to */
+/*   markers) below to show the work we put in for it                         */
+/******************************************************************************/
 
 bool get_markers_above_delete(TreeNode start, TreeNode node_ignore, bool release) {
   bool expected = false;
@@ -88,38 +179,6 @@ void clear_local_area_delete(TreeNode &node, vector<TreeNode> &flagged_nodes) {
 
 
 /* Helper functions for insert */
-bool setup_local_area_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
-  // Note: node and p are guaranteed to exist, gp and u are not
-  TreeNode p = nullptr, gp = nullptr, u = nullptr;
-  if (node) p = node->parent;
-  if (p) gp = p->parent;
-  if (gp) u = gp->child[gp->child[1] != p];
-
-  // Set up Flags
-  bool expected = false;
-
-  // Because we (now) guarantee node and p are already flagged, immediately add to flagged nodes
-  flagged_nodes.push_back(node);
-  if (p) flagged_nodes.push_back(p);
-
-  vector<TreeNode> nodes_to_be_flagged = {gp, u};  
-  for (auto &node : nodes_to_be_flagged) {
-    // if (node) printf("Thread %d attempting to acquire %d...", omp_get_thread_num(), node->val);
-    if (node && (node->marker != -1 || !node->flag.compare_exchange_weak(expected, true))) {
-      // If the flag couldn't be set correctly, roll back the changes to flags and return false => return to root
-      // printf("[WARN] thread %d failed to get flag for %d\n", omp_get_thread_num(), node->val);
-      for (auto &flagged_node : flagged_nodes) {
-        flagged_node->flag = false;
-      }
-      return false;
-    } else if (node != nullptr) {
-      flagged_nodes.push_back(node);
-      // printf("Local Acquired for thread %d, val: %d\n", omp_get_thread_num(), node->val);
-    }
-  }
-
-  return true;
-}
 
 bool setup_local_area_delete(TreeNode &start, TreeNode &node, vector<TreeNode> &flagged_nodes) {
   // TODO: CHECK correctness - CHECK SIMILARITY
@@ -202,129 +261,7 @@ bool setup_local_area_delete(TreeNode &start, TreeNode &node, vector<TreeNode> &
     flagged_nodes.push_back(wrc);
   }
 
-
-
-  // TreeNode p = nullptr, w = nullptr, wlc = nullptr, wrc = nullptr;
-  // TreeNode x = start->child[!start->child[0]]; // Get the only child of start - guaranteed to exist
-  // if (start) p = start->parent;
-  // if (p) w = p->child[p->child[1] != node];
-  // if (w) {
-  //   wlc = w->child[0];
-  //   wrc = w->child[1];
-  // }
-
-  // printf("%d\n", __LINE__);
-
-  // // Setup flags for local area (all 5 nodes)
-  // bool expected = false;
-
-  // vector<TreeNode> nodes_to_be_flagged = {x, w, p, wlc, wrc};
-
-  // for (auto &node : nodes_to_be_flagged) {
-  //   if (node && (node->marker != -1 || !node->flag.compare_exchange_weak(expected, true))) {
-  //     // If the flag couldn't be set correctly, roll back the changes to flags and return false => return to root
-  //     for (auto &flagged_node : flagged_nodes) {
-  //       if (flagged_node != node) flagged_node->flag = false;
-  //     }
-  //     flagged_nodes.clear();
-
-  //     return false;
-  //   } else if (node != nullptr) {
-  //     flagged_nodes.push_back(node);
-  //     printf("Node pushed\n");
-  //   }
-  // }
-  // printf("%d\n", __LINE__);
-
-
-  // int thread_id = omp_get_thread_num();
-
-  // if (!p) return true; // If node is root, no need to set markers
-  // printf("%d - p (%p), gp (%p)\n", __LINE__, p, p->parent);
-  // TreeNode gp = p->parent;
-  // TreeNode marker_node = gp;
-  // printf("%d\n", __LINE__);
-
-
-  // // Get 4 markers above the parent node
-  // for (int i = 0; i < 4; i++) {
-  //   if (marker_node) {
-  //     if (marker_node->marker == -1) {
-  //       marker_node->marker = thread_id;
-  //       marker_node = marker_node->parent;
-  //     } else {
-  //       // Writing to the i-th marker failed
-  //       // Reset all flags
-  //       for (auto &flagged_node : flagged_nodes) {
-  //         if (flagged_node && flagged_node != node) flagged_node->flag = false;
-  //       }
-        
-  //       // Reset all markers up to the (i-1)-th marker (inclusive)
-  //       marker_node = gp;
-  //       for (int j = 0; j < i - 1; j++) {
-  //         if (marker_node) {
-  //           marker_node->marker = -1;
-  //           marker_node = marker_node->parent;
-  //         }
-  //       }
-
-  //       return false;
-  //     }
-  //   }
-  // }  
-  // printf("%d\n", __LINE__);
-
   return true;
-}
-
-// Move Local Area Up when insert needs to go up a layer
-// NOTE: `node` here is the original node BEFORE moveup, not after!
-void move_local_area_up_insert(TreeNode &node, vector<TreeNode> &flagged_nodes) {
-  // Define Parent, Grandparent, and Uncle of Original Node
-  TreeNode p = node->parent;
-  TreeNode gp = p->parent;
-  TreeNode u = gp->child[gp->child[1] != p];
-
-  // Remove flag from node, parent, and uncle
-  // By virtue of moving up to gp, we know p and gp must already exist
-  node->flag = false;
-  p->flag = false;
-  if (u) u->flag = false;
-
-  // Remove nodes from flagged_nodes
-  flagged_nodes = {gp};
-
-  // Set node to grandparent, and return if new node is the root
-  node = gp;
-  if (!node->parent) {
-    return;
-  }
-
-  // Also add flags for all except new node (who already had one as old gp)
-  bool expected = false;
-  p = node->parent;
-  gp = p->parent;
-
-  if (gp) u = gp->child[gp->child[1] != p];
-  
-  while (!p->flag.compare_exchange_weak(expected, true)) {
-    expected = false;
-  }
-  flagged_nodes.push_back(p);
-
-  if (gp) {
-    while (!gp->flag.compare_exchange_weak(expected, true)) {
-      expected = false;
-    }
-    flagged_nodes.push_back(gp);
-  }
-
-  if (u) {
-    while (u->marker != -1 && !u->flag.compare_exchange_weak(expected, true)) {
-      expected = false;
-    }
-    flagged_nodes.push_back(u);
-  }
 }
 
 
