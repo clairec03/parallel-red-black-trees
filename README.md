@@ -1,5 +1,5 @@
 # Parallel Red-black Trees
-
+![speedup scaling](./src/program_speedup.png)
 **Instructions:**
 
 To compile, run the following:
